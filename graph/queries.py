@@ -61,7 +61,7 @@ def case_style_subgraph(node_id: str, depth: int = 2, limit: int = 200) -> dict[
         "  source: startNode(rel).id, "
         "  target: endNode(rel).id, "
         "  type: type(rel), "
-        "  properties: rel {{.date, .confidence, .source_module, .case_id, .interpretation}} "
+        "  properties: rel {.date, .confidence, .source_module, .case_id, .interpretation} "
         "}) AS edges "
         "RETURN [x IN nodes | x {.*, labels: labels(x)}] AS nodes, edges"
     )
@@ -130,7 +130,7 @@ def multi_hop_paths(source_id: str, target_id: str, max_hops: int = 4, limit: in
         "[n IN nodes(path) | n {.*, labels: labels(n)}] AS nodes, "
         "[r IN relationships(path) | { "
         "  source: startNode(r).id, target: endNode(r).id, type: type(r), "
-        "  properties: r {{.date, .confidence, .source_module, .interpretation}} "
+        "  properties: r {.date, .confidence, .source_module, .interpretation} "
         "}] AS edges, length(path) AS hops"
     )
     rows = run_query(cypher, source_id=source_id, target_id=target_id, limit=limit)
