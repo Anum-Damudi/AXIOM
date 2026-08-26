@@ -13,11 +13,15 @@ Maintained by Member 6 (Data, Testing & Product Lead)
 - [ ] Output format matches what Graph module expects
 
 ## 3. Knowledge Graph (Member 2)
-- [ ] All entities load correctly into graph database
-- [ ] Relationships connect correctly
-- [ ] Centrality / "key person" detection works
+- [x] Graph schema, constraints, and Python module in `graph/`
+- [x] Story-driven seed (`data/graph_seed.json`) with hidden links C101–C287–C204
+- [ ] Dataset reviewed by Member 1 (NLP) for ingest JSON fit
+- [ ] All entities load correctly into a running Neo4j instance
+- [ ] Relationships connect correctly after `python -m graph seed`
+- [ ] Centrality / "key person" detection works (structural score only)
 - [ ] Community/cluster detection works
 - [ ] Hidden-link detection works on test data
+- [ ] API mounted by Member 4 (`graph.router.graph_router`)
 
 ## 4. Computer Vision / Evidence (Member 3)
 - [ ] Image upload works

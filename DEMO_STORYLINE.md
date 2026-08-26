@@ -36,5 +36,8 @@ Show judges how NEXUS-CRIME turns scattered case data into a clear, connected pi
 - Test the full flow at least twice before the actual presentation.
 
 ## Case to Use for Demo
-- Pick one clear, clean case from case_reports.json that shows a strong story (multiple connections, at least one hidden link).
-- TBD: finalize once dataset is scaled up and reviewed by team.
+- **Primary:** C101 — Bhatkal roadside meeting (Arun Sharma, Ravi Naik, van KA-47-AB-1234).
+- **Related lead:** C287 — Udupi warehouse recovery (same van, Ravi named on packing slip).
+- **Second lead:** C204 — Ankola checkpoint stop (same van two days later).
+- Seeded in `data/graph_seed.json`. Hidden-link API: `GET /graph/hidden-links?case_id=C101`.
+- Language: potential connection / investigative lead — not a finding of guilt.

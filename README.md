@@ -21,11 +21,30 @@ AI-Powered Criminal Network Analysis & Intelligence Platform
 
 ## Project Structure
 
+```
 AXIOM/
-├── data/              # Synthetic dataset + generator script (Ifra Safa)
-├── frontend/          # Dashboard UI (Aruba)
+├── data/                 # Synthetic datasets (Member 6 + graph seed)
+│   ├── generate_data.py
+│   └── graph_seed.json   # Story-driven graph used by Member 2
+├── graph/                # Knowledge graph & network intelligence (Aysha)
+├── tests/
+├── docker-compose.yml    # Neo4j
+└── frontend/             # Dashboard UI (Aruba) — not in repo yet
+```
 
-(More folders will be added as NLP, graph, backend, and CV modules are built.)
+## Knowledge graph (Member 2)
+
+Neo4j schema, ingest, Cypher queries, centrality/communities, and hidden-link scoring live in `graph/`. See `graph/README.md`.
+
+```bash
+docker compose up -d
+pip install -r requirements.txt
+python -m graph setup
+python -m graph seed
+python -m graph serve
+```
+
+Analytics are investigative leads only. They do not determine guilt.
 
 ## Dataset
 Located in /data. Generated using generate_data.py (Python, requires faker).
@@ -46,4 +65,4 @@ Produces:
 Python, FastAPI, React, Neo4j, PostgreSQL, NLP/Transformers, NetworkX, Cytoscape.js, Docker
 
 ## Status
-🚧 In development — dataset complete, modules in progress.
+🚧 In progress — synthetic data exists; knowledge graph module is implemented (needs a running Neo4j for live demo). NLP, CV, and frontend modules still to land.
