@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-primary: #070b12;
+  --bg-secondary: #0c1018;
+  --bg-elevated: #111827;
+  --bg-card: #131a27;
+  --bg-card-hover: #172030;
+
+  --border-subtle: rgba(148, 163, 184, 0.08);
+  --border-default: rgba(148, 163, 184, 0.14);
+  --border-accent: rgba(34, 211, 238, 0.35);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent: #22d3ee;
+  --accent-dim: #0891b2;
+  --accent-glow: rgba(34, 211, 238, 0.15);
+  --accent-glow-strong: rgba(34, 211, 238, 0.28);
+
+  --risk-high: #f87171;
+  --risk-high-bg: rgba(248, 113, 113, 0.12);
+  --risk-medium: #fbbf24;
+  --risk-medium-bg: rgba(251, 191, 36, 0.12);
+  --risk-low: #4ade80;
+  --risk-low-bg: rgba(74, 222, 128, 0.12);
+
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 24px rgba(34, 211, 238, 0.08);
+
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Report-specific theme-safe colors */
+  --report-bg: #ffffff;
+  --report-surface: #f8fafc;
+  --report-surface-alt: #f1f5f9;
+  --report-border: #e2e8f0;
+  --report-border-strong: #cbd5e1;
+  --report-text-primary: #0f172a;
+  --report-text-secondary: #334155;
+  --report-text-muted: #64748b;
+  --report-heading: #0891b2;
+  --report-heading-rule: #0891b2;
+  --report-kpi-bg: #f0fdfa;
+  --report-kpi-border: #99f6e4;
+  --report-card-bg: #ffffff;
+  --report-card-border: #e2e8f0;
+  --report-list-dot: #0891b2;
+  --report-numbered-bg: #ecfeff;
+  --report-numbered-text: #0891b2;
+  --report-connection-bg: #f0fdfa;
+  --report-connection-border: #99f6e4;
+  --report-classification-bg: #ecfeff;
+  --report-classification-border: #0891b2;
+  --report-evidence-verified-bg: #dcfce7;
+  --report-evidence-verified-text: #15803d;
+  --report-evidence-pending-bg: #fef9c3;
+  --report-evidence-pending-text: #a16207;
+  --report-evidence-archived-bg: #f1f5f9;
+  --report-evidence-archived-text: #475569;
+  --report-evidence-bar-bg: #e2e8f0;
+  --report-evidence-bar-fill: #0891b2;
+  --report-timeline-line: #0891b2;
+  --report-timeline-dot: #0891b2;
+  --report-timeline-dot-border: #ffffff;
+
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-accent: rgba(8, 145, 178, 0.4);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --accent: #0891b2;
+  --accent-dim: #06b6d4;
+  --accent-glow: rgba(8, 145, 178, 0.1);
+  --accent-glow-strong: rgba(8, 145, 178, 0.18);
+
+  --risk-high: #dc2626;
+  --risk-high-bg: rgba(220, 38, 38, 0.08);
+  --risk-medium: #d97706;
+  --risk-medium-bg: rgba(217, 119, 6, 0.08);
+  --risk-low: #16a34a;
+  --risk-low-bg: rgba(22, 163, 74, 0.08);
+
+  --success: #059669;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 24px rgba(8, 145, 178, 0.06);
+
+  /* Report stays the same in both themes — always a professional document appearance */
+  --report-bg: #ffffff;
+  --report-surface: #f8fafc;
+  --report-surface-alt: #f1f5f9;
+  --report-border: #e2e8f0;
+  --report-border-strong: #cbd5e1;
+  --report-text-primary: #0f172a;
+  --report-text-secondary: #334155;
+  --report-text-muted: #64748b;
+  --report-heading: #0891b2;
+  --report-heading-rule: #0891b2;
+  --report-kpi-bg: #f0fdfa;
+  --report-kpi-border: #99f6e4;
+  --report-card-bg: #ffffff;
+  --report-card-border: #e2e8f0;
+  --report-list-dot: #0891b2;
+  --report-numbered-bg: #ecfeff;
+  --report-numbered-text: #0891b2;
+  --report-connection-bg: #f0fdfa;
+  --report-connection-border: #99f6e4;
+  --report-classification-bg: #ecfeff;
+  --report-classification-border: #0891b2;
+  --report-evidence-verified-bg: #dcfce7;
+  --report-evidence-verified-text: #15803d;
+  --report-evidence-pending-bg: #fef9c3;
+  --report-evidence-pending-text: #a16207;
+  --report-evidence-archived-bg: #f1f5f9;
+  --report-evidence-archived-text: #475569;
+  --report-evidence-bar-bg: #e2e8f0;
+  --report-evidence-bar-fill: #0891b2;
+  --report-timeline-line: #0891b2;
+  --report-timeline-dot: #0891b2;
+  --report-timeline-dot-border: #ffffff;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
