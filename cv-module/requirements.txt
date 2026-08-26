@@ -1,0 +1,20 @@
+# CV module — runtime dependencies
+# Versions match the working environment; do not change without testing.
+#
+# Install:
+#   pip install -r requirements.txt
+
+# CV module — runtime dependencies
+# Versions match the working environment; do not change without testing.
+
+# Object detection
+ultralytics==8.4.129
+
+# Image processing
+Pillow==12.3.0
+opencv-python==5.0.0.93
+numpy==2.2.6
+
+# OCR
+paddleocr==3.4.1
+paddlepaddle
