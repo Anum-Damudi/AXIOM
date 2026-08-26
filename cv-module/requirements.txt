@@ -1,0 +1,29 @@
+# CV module — runtime dependencies
+# Versions match the working environment; do not change without testing.
+#
+# Install:
+#   pip install -r requirements.txt
+#
+# Note: torch and torchvision are required by ultralytics but are
+# installed separately because the correct variant (CPU vs CUDA) is
+# hardware-dependent. Install them first from https://pytorch.org/get-started/locally/
+#
+# Note: paddleocr has its own heavy dependency tree (paddlepaddle, etc.).
+# If your environment already has a working PaddleOCR venv (ocr-test/.venv),
+# evidence_processor.py will use that automatically — you do not need to
+# reinstall paddleocr here unless you are building a fully standalone environment.
+
+# Object detection
+ultralytics==8.4.129
+
+# Image I/O and combined-overlay generation (used directly in evidence_processor.py)
+Pillow==12.3.0
+
+# OpenCV — used internally by ultralytics for image decoding/annotation
+opencv-python==5.0.0.93
+
+# Numerical arrays — used by ultralytics and opencv
+numpy==2.2.6
+
+# OCR — used by ocr.py (now bundled in cv-module)
+paddleocr==3.4.1
