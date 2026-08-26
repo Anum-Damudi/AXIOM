@@ -22,12 +22,34 @@ ANALYTICS_NOTE = (
 )
 
 
+def _pagerank(graph: nx.Graph, alpha: float = 0.85) -> dict[str, float]:
+    """Compute PageRank without requiring the optional SciPy dependency."""
+    nodes = list(graph)
+    if not nodes:
+        return {}
+    rank = {node: 1.0 / len(nodes) for node in nodes}
+    for _ in range(100):
+        next_rank = {node: (1.0 - alpha) / len(nodes) for node in nodes}
+        dangling = sum(rank[node] for node in nodes if graph.degree(node) == 0)
+        for node in nodes:
+            share = rank[node] / graph.degree(node) if graph.degree(node) else 0.0
+            for neighbor in graph[node]:
+                next_rank[neighbor] += alpha * share
+        dangling_share = alpha * dangling / len(nodes)
+        next_rank = {node: score + dangling_share for node, score in next_rank.items()}
+        if max(abs(next_rank[node] - rank[node]) for node in nodes) < 1e-8:
+            return next_rank
+        rank = next_rank
+    return rank
+
+
 def _load_undirected_graph(case_id: str | None = None) -> nx.Graph:
     if case_id:
         cypher = (
             "MATCH (c:Case {id: $case_id}) "
             "MATCH (c)-[*1..3]-(n) "
-            "WITH collect(DISTINCT n) + c AS nodes "
+            "WITH collect(DISTINCT n) AS related, c "
+            "WITH related + [c] AS nodes "
             "UNWIND nodes AS a "
             "UNWIND nodes AS b "
             "MATCH (a)-[r]-(b) "
@@ -88,7 +110,7 @@ def centrality(case_id: str | None = None, top_n: int = 15) -> dict[str, Any]:
         return {"algorithms": {}, "nodes": [], "disclaimer": INVESTIGATIVE_DISCLAIMER}
 
     degree = nx.degree_centrality(graph)
-    pagerank = nx.pagerank(graph)
+    pagerank = _pagerank(graph)
     betweenness = nx.betweenness_centrality(graph)
 
     return {
@@ -174,7 +196,7 @@ def node_scores_for_frontend(case_id: str | None = None) -> dict[str, dict[str, 
     if graph.number_of_nodes() == 0:
         return {}
     degree = nx.degree_centrality(graph)
-    pagerank = nx.pagerank(graph)
+    pagerank = _pagerank(graph)
     groups = list(nx_community.louvain_communities(graph, seed=42))
     comm = {}
     for idx, group in enumerate(groups):

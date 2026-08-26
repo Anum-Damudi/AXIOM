@@ -61,7 +61,7 @@ def upsert_node(label: str, properties: dict[str, Any]) -> dict[str, Any]:
         f"MERGE (n:{label} {{id: $id}}) "
         "ON CREATE SET n += $props, n.created_at = datetime(), n.updated_at = datetime() "
         "ON MATCH SET n += $props, n.updated_at = datetime() "
-        "RETURN n {{.*, labels: labels(n)}} AS node"
+        "RETURN n {.*, labels: labels(n)} AS node"
     )
     rows = run_write(cypher, id=node_id, props=props)
     return rows[0]["node"]
