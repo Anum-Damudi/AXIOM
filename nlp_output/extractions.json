@@ -1,0 +1,628 @@
+[
+  {
+    "case_id": "C001",
+    "text": "Kelly Howard met Joshua Brown near Michaelberg on 2026-03-20 using vehicle KA-56-ED-1949.",
+    "entities": [
+      {
+        "text": "Kelly Howard",
+        "type": "PERSON",
+        "start": 0,
+        "end": 12,
+        "id": "P039"
+      },
+      {
+        "text": "Joshua Brown",
+        "type": "PERSON",
+        "start": 17,
+        "end": 29,
+        "id": "P042"
+      },
+      {
+        "text": "KA-56-ED-1949",
+        "type": "VEHICLE",
+        "start": 75,
+        "end": 88,
+        "id": "V011"
+      },
+      {
+        "text": "Michaelberg",
+        "type": "LOCATION",
+        "start": 35,
+        "end": 46,
+        "id": "L008"
+      },
+      {
+        "text": "2026-03-20",
+        "type": "DATE",
+        "start": 50,
+        "end": 60,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P039",
+        "target": "P042",
+        "type": "MET",
+        "date": "2026-03-20",
+        "case_id": "C001"
+      },
+      {
+        "source": "P042",
+        "target": "V011",
+        "type": "USED",
+        "date": "2026-03-20",
+        "case_id": "C001"
+      },
+      {
+        "source": "P042",
+        "target": "L008",
+        "type": "LOCATED_AT",
+        "date": "2026-03-20",
+        "case_id": "C001"
+      }
+    ]
+  },
+  {
+    "case_id": "C002",
+    "text": "Bradley Smith met Bradley Smith near Smithmouth on 2026-01-08 using vehicle KA-65-CH-1053.",
+    "entities": [
+      {
+        "text": "Bradley Smith",
+        "type": "PERSON",
+        "start": 0,
+        "end": 13,
+        "id": "P029"
+      },
+      {
+        "text": "KA-65-CH-1053",
+        "type": "VEHICLE",
+        "start": 76,
+        "end": 89,
+        "id": "V007"
+      },
+      {
+        "text": "Smithmouth",
+        "type": "LOCATION",
+        "start": 37,
+        "end": 47,
+        "id": "L009"
+      },
+      {
+        "text": "2026-01-08",
+        "type": "DATE",
+        "start": 51,
+        "end": 61,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P029",
+        "target": "V007",
+        "type": "USED",
+        "date": "2026-01-08",
+        "case_id": "C002"
+      },
+      {
+        "source": "P029",
+        "target": "L009",
+        "type": "LOCATED_AT",
+        "date": "2026-01-08",
+        "case_id": "C002"
+      }
+    ]
+  },
+  {
+    "case_id": "C003",
+    "text": "Keith Hernandez met Nancy Gomez near Lake Tricia on 2026-04-13 using vehicle KA-97-EF-2827.",
+    "entities": [
+      {
+        "text": "Keith Hernandez",
+        "type": "PERSON",
+        "start": 0,
+        "end": 15,
+        "id": "P031"
+      },
+      {
+        "text": "Nancy Gomez",
+        "type": "PERSON",
+        "start": 20,
+        "end": 31,
+        "id": "P048"
+      },
+      {
+        "text": "KA-97-EF-2827",
+        "type": "VEHICLE",
+        "start": 77,
+        "end": 90,
+        "id": "V006"
+      },
+      {
+        "text": "Lake Tricia",
+        "type": "LOCATION",
+        "start": 37,
+        "end": 48,
+        "id": "L011"
+      },
+      {
+        "text": "2026-04-13",
+        "type": "DATE",
+        "start": 52,
+        "end": 62,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P031",
+        "target": "P048",
+        "type": "MET",
+        "date": "2026-04-13",
+        "case_id": "C003"
+      },
+      {
+        "source": "P048",
+        "target": "V006",
+        "type": "USED",
+        "date": "2026-04-13",
+        "case_id": "C003"
+      },
+      {
+        "source": "P048",
+        "target": "L011",
+        "type": "LOCATED_AT",
+        "date": "2026-04-13",
+        "case_id": "C003"
+      }
+    ]
+  },
+  {
+    "case_id": "C004",
+    "text": "Courtney Ward met Barbara Chambers near Lake Tricia on 2026-01-28 using vehicle KA-12-DD-1117.",
+    "entities": [
+      {
+        "text": "Barbara Chambers",
+        "type": "PERSON",
+        "start": 18,
+        "end": 34,
+        "id": "P019"
+      },
+      {
+        "text": "Courtney Ward",
+        "type": "PERSON",
+        "start": 0,
+        "end": 13,
+        "id": "P006"
+      },
+      {
+        "text": "KA-12-DD-1117",
+        "type": "VEHICLE",
+        "start": 80,
+        "end": 93,
+        "id": "V017"
+      },
+      {
+        "text": "Lake Tricia",
+        "type": "LOCATION",
+        "start": 40,
+        "end": 51,
+        "id": "L011"
+      },
+      {
+        "text": "2026-01-28",
+        "type": "DATE",
+        "start": 55,
+        "end": 65,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P006",
+        "target": "P019",
+        "type": "MET",
+        "date": "2026-01-28",
+        "case_id": "C004"
+      },
+      {
+        "source": "P019",
+        "target": "V017",
+        "type": "USED",
+        "date": "2026-01-28",
+        "case_id": "C004"
+      },
+      {
+        "source": "P019",
+        "target": "L011",
+        "type": "LOCATED_AT",
+        "date": "2026-01-28",
+        "case_id": "C004"
+      }
+    ]
+  },
+  {
+    "case_id": "C005",
+    "text": "Heather Taylor met Teresa Reed near New Richardville on 2026-02-20 using vehicle KA-56-ED-1949.",
+    "entities": [
+      {
+        "text": "Heather Taylor",
+        "type": "PERSON",
+        "start": 0,
+        "end": 14,
+        "id": "P041"
+      },
+      {
+        "text": "Teresa Reed",
+        "type": "PERSON",
+        "start": 19,
+        "end": 30,
+        "id": "P040"
+      },
+      {
+        "text": "KA-56-ED-1949",
+        "type": "VEHICLE",
+        "start": 81,
+        "end": 94,
+        "id": "V011"
+      },
+      {
+        "text": "New Richardville",
+        "type": "LOCATION",
+        "start": 36,
+        "end": 52,
+        "id": "L002"
+      },
+      {
+        "text": "2026-02-20",
+        "type": "DATE",
+        "start": 56,
+        "end": 66,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P041",
+        "target": "P040",
+        "type": "MET",
+        "date": "2026-02-20",
+        "case_id": "C005"
+      },
+      {
+        "source": "P040",
+        "target": "V011",
+        "type": "USED",
+        "date": "2026-02-20",
+        "case_id": "C005"
+      },
+      {
+        "source": "P040",
+        "target": "L002",
+        "type": "LOCATED_AT",
+        "date": "2026-02-20",
+        "case_id": "C005"
+      }
+    ]
+  },
+  {
+    "case_id": "C006",
+    "text": "Kimberly Mora met Noah Newman near Lake Jeremyhaven on 2026-01-07 using vehicle KA-86-FH-1319.",
+    "entities": [
+      {
+        "text": "Kimberly Mora",
+        "type": "PERSON",
+        "start": 0,
+        "end": 13,
+        "id": "P049"
+      },
+      {
+        "text": "Noah Newman",
+        "type": "PERSON",
+        "start": 18,
+        "end": 29,
+        "id": "P016"
+      },
+      {
+        "text": "KA-86-FH-1319",
+        "type": "VEHICLE",
+        "start": 80,
+        "end": 93,
+        "id": "V010"
+      },
+      {
+        "text": "Lake Jeremyhaven",
+        "type": "LOCATION",
+        "start": 35,
+        "end": 51,
+        "id": "L004"
+      },
+      {
+        "text": "2026-01-07",
+        "type": "DATE",
+        "start": 55,
+        "end": 65,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P049",
+        "target": "P016",
+        "type": "MET",
+        "date": "2026-01-07",
+        "case_id": "C006"
+      },
+      {
+        "source": "P016",
+        "target": "V010",
+        "type": "USED",
+        "date": "2026-01-07",
+        "case_id": "C006"
+      },
+      {
+        "source": "P016",
+        "target": "L004",
+        "type": "LOCATED_AT",
+        "date": "2026-01-07",
+        "case_id": "C006"
+      }
+    ]
+  },
+  {
+    "case_id": "C007",
+    "text": "Charles Moore met Curtis Adams near Keithmouth on 2026-04-14 using vehicle KA-28-EC-5040.",
+    "entities": [
+      {
+        "text": "Charles Moore",
+        "type": "PERSON",
+        "start": 0,
+        "end": 13,
+        "id": "P013"
+      },
+      {
+        "text": "Curtis Adams",
+        "type": "PERSON",
+        "start": 18,
+        "end": 30,
+        "id": "P010"
+      },
+      {
+        "text": "KA-28-EC-5040",
+        "type": "VEHICLE",
+        "start": 75,
+        "end": 88,
+        "id": "V001"
+      },
+      {
+        "text": "Keithmouth",
+        "type": "LOCATION",
+        "start": 36,
+        "end": 46,
+        "id": "L001"
+      },
+      {
+        "text": "2026-04-14",
+        "type": "DATE",
+        "start": 50,
+        "end": 60,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P013",
+        "target": "P010",
+        "type": "MET",
+        "date": "2026-04-14",
+        "case_id": "C007"
+      },
+      {
+        "source": "P010",
+        "target": "V001",
+        "type": "USED",
+        "date": "2026-04-14",
+        "case_id": "C007"
+      },
+      {
+        "source": "P010",
+        "target": "L001",
+        "type": "LOCATED_AT",
+        "date": "2026-04-14",
+        "case_id": "C007"
+      }
+    ]
+  },
+  {
+    "case_id": "C008",
+    "text": "Noah Newman met Keith Hernandez near South Robert on 2026-02-19 using vehicle KA-37-CH-4981.",
+    "entities": [
+      {
+        "text": "Keith Hernandez",
+        "type": "PERSON",
+        "start": 16,
+        "end": 31,
+        "id": "P031"
+      },
+      {
+        "text": "Noah Newman",
+        "type": "PERSON",
+        "start": 0,
+        "end": 11,
+        "id": "P016"
+      },
+      {
+        "text": "KA-37-CH-4981",
+        "type": "VEHICLE",
+        "start": 78,
+        "end": 91,
+        "id": "V020"
+      },
+      {
+        "text": "South Robert",
+        "type": "LOCATION",
+        "start": 37,
+        "end": 49,
+        "id": "L014"
+      },
+      {
+        "text": "2026-02-19",
+        "type": "DATE",
+        "start": 53,
+        "end": 63,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P016",
+        "target": "P031",
+        "type": "MET",
+        "date": "2026-02-19",
+        "case_id": "C008"
+      },
+      {
+        "source": "P031",
+        "target": "V020",
+        "type": "USED",
+        "date": "2026-02-19",
+        "case_id": "C008"
+      },
+      {
+        "source": "P031",
+        "target": "L014",
+        "type": "LOCATED_AT",
+        "date": "2026-02-19",
+        "case_id": "C008"
+      }
+    ]
+  },
+  {
+    "case_id": "C009",
+    "text": "Anthony Garcia met David Ward near Gainesberg on 2026-01-06 using vehicle KA-49-GF-8177.",
+    "entities": [
+      {
+        "text": "Anthony Garcia",
+        "type": "PERSON",
+        "start": 0,
+        "end": 14,
+        "id": "P050"
+      },
+      {
+        "text": "David Ward",
+        "type": "PERSON",
+        "start": 19,
+        "end": 29,
+        "id": "P005"
+      },
+      {
+        "text": "KA-49-GF-8177",
+        "type": "VEHICLE",
+        "start": 74,
+        "end": 87,
+        "id": "V015"
+      },
+      {
+        "text": "Gainesberg",
+        "type": "LOCATION",
+        "start": 35,
+        "end": 45,
+        "id": "L007"
+      },
+      {
+        "text": "2026-01-06",
+        "type": "DATE",
+        "start": 49,
+        "end": 59,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P050",
+        "target": "P005",
+        "type": "MET",
+        "date": "2026-01-06",
+        "case_id": "C009"
+      },
+      {
+        "source": "P005",
+        "target": "V015",
+        "type": "USED",
+        "date": "2026-01-06",
+        "case_id": "C009"
+      },
+      {
+        "source": "P005",
+        "target": "L007",
+        "type": "LOCATED_AT",
+        "date": "2026-01-06",
+        "case_id": "C009"
+      }
+    ]
+  },
+  {
+    "case_id": "C010",
+    "text": "Heather Taylor met Melanie Long near Lopezmouth on 2026-07-03 using vehicle KA-65-CH-1053.",
+    "entities": [
+      {
+        "text": "Heather Taylor",
+        "type": "PERSON",
+        "start": 0,
+        "end": 14,
+        "id": "P041"
+      },
+      {
+        "text": "Melanie Long",
+        "type": "PERSON",
+        "start": 19,
+        "end": 31,
+        "id": "P037"
+      },
+      {
+        "text": "KA-65-CH-1053",
+        "type": "VEHICLE",
+        "start": 76,
+        "end": 89,
+        "id": "V007"
+      },
+      {
+        "text": "Lopezmouth",
+        "type": "LOCATION",
+        "start": 37,
+        "end": 47,
+        "id": "L012"
+      },
+      {
+        "text": "2026-07-03",
+        "type": "DATE",
+        "start": 51,
+        "end": 61,
+        "id": null
+      }
+    ],
+    "relations": [
+      {
+        "source": "P041",
+        "target": "P037",
+        "type": "MET",
+        "date": "2026-07-03",
+        "case_id": "C010"
+      },
+      {
+        "source": "P037",
+        "target": "V007",
+        "type": "USED",
+        "date": "2026-07-03",
+        "case_id": "C010"
+      },
+      {
+        "source": "P037",
+        "target": "L012",
+        "type": "LOCATED_AT",
+        "date": "2026-07-03",
+        "case_id": "C010"
+      }
+    ]
+  }
+]
