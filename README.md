@@ -2,48 +2,79 @@
 AI-Powered Criminal Network Analysis & Intelligence Platform
 
 ## Problem Statement
-- PS ID: SIH26189
-- Title: AI-Powered Criminal Network Analysis System
-- Category: Software
+- **PS ID:** SIH26189
+- **Title:** AI-Powered Criminal Network Analysis System
+- **Category:** Software
 
-## Team
-6-member team building an AI + Knowledge Graph + Network Analytics platform that turns scattered case data into a visual, searchable investigation tool.
-
-## Team Roles
+## Team Roles & System Ownership
 | Member | Role | Responsibility |
 |--------|------|-----------------|
-| Khamrunnisa Anjum | AI/NLP Lead | Extracts people, places, dates, relationships from case text |
-| Aysha Fakarde | Knowledge Graph & Analytics | Graph database + network intelligence (Neo4j) |
-| Amal Khaleefa | Computer Vision & Evidence | Crime-scene image / evidence analysis |
-| Anum | Backend & Integration | APIs, authentication, connects all modules |
-| Aruba | Frontend & Visualization | Investigator dashboard + interactive graph |
-| Ifra Safa | Data, Testing & Product | Synthetic dataset, testing, documentation, demo |
+| Khamrunnisa Anjum | AI/NLP Lead | Entity & relationship extraction from case reports |
+| Aysha Fakarde | Knowledge Graph & Analytics | Neo4j graph relationships & NetworkX analytics |
+| Amal Khaleefa | Computer Vision & Evidence | Crime-scene evidence & image analysis |
+| Anum | Backend & Integration Lead | FastAPI Orchestrator, Auth, PostgreSQL, Neo4j, AI Adapters, Search, Cross-Case Intelligence |
+| Aruba | Frontend & Visualization | Investigator dashboard UI & Cytoscape.js graph |
+| Ifra Safa | Data, Testing & Product | Synthetic dataset, QA testing, storyline & demo |
+
+---
 
 ## Project Structure
 
+```
 AXIOM/
-├── data/              # Synthetic dataset + generator script (Ifra Safa)
-├── frontend/          # Dashboard UI (Aruba)
+├── backend/                  # Enterprise FastAPI Orchestrator (Member 4)
+│   ├── app/
+│   │   ├── api/v1/          # Versioned REST APIs (Auth, Cases, Reports, People, Vehicles, Evidence, Graph, etc.)
+│   │   ├── core/            # Config, Security (JWT/Bcrypt), DB, Neo4j, Middleware, Exceptions
+│   │   ├── db/              # Seed script (populates Postgres & Neo4j from /data)
+│   │   ├── models/          # SQLAlchemy ORM System of Record Models
+│   │   ├── schemas/         # Pydantic v2 Request/Response Schemas
+│   │   ├── services/        # Service Layer & Integration Adapters (NLP, CV, Graph, Cross-Case)
+│   │   └── main.py          # FastAPI Main Entrypoint & Swagger Docs
+│   ├── tests/               # Pytest Test Suite (Auth, Cases, Reports, Evidence, Search, Graph, Dashboard)
+│   ├── Dockerfile           # Docker container file for Backend
+│   ├── requirements.txt     # Python backend dependencies
+│   └── .env                 # Environment configuration
+├── data/                    # Synthetic investigation dataset
+├── frontend/                # React Dashboard UI
+└── docker-compose.yml       # Multi-container orchestration (Backend, PostgreSQL, Neo4j)
+```
 
-(More folders will be added as NLP, graph, backend, and CV modules are built.)
+---
 
-## Dataset
-Located in /data. Generated using generate_data.py (Python, requires faker).
+## Quickstart & Execution
 
-Run it with:
-pip install faker
-python generate_data.py
+### 1. Run Data Seeder
+Populate PostgreSQL system of record and Neo4j graph database from `/data/*.json`:
+```bash
+cd backend
+pip install -r requirements.txt
+python -m app.db.seed
+```
 
-Produces:
-- people.json
-- vehicles.json
-- locations.json
-- cases.json
-- relationships.json
-- case_reports.json
+### 2. Start Backend Server
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+Interactive OpenAPI Swagger Docs available at: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-## Tech Stack
-Python, FastAPI, React, Neo4j, PostgreSQL, NLP/Transformers, NetworkX, Cytoscape.js, Docker
+### 3. Run Test Suite
+```bash
+pytest -v
+```
 
-## Status
-🚧 In development — dataset complete, modules in progress.
+### 4. Docker Compose
+```bash
+docker-compose up --build
+```
+
+---
+
+## Key Backend Capabilities
+- **Intelligence Orchestration Gateway:** Router -> Service -> Model architecture with standard `{ success: true, data: ..., meta: ... }` response contract and custom error contract.
+- **Cross-Case Intelligence Engine:** `GET /api/v1/cases/{case_id}/related-cases` automatically detects multi-hop shared entities (people, vehicles, locations) across distinct cases with explainable leads.
+- **NLP Report Ingestion Pipeline:** Accepts raw text case reports, extracts entities & relationships, validates AI payloads, deduplicates entities, and synchronizes to Neo4j.
+- **Computer Vision Evidence Storage:** Secure evidence file upload with MIME/size validation and object/OCR detection.
+- **Network Analytics:** `GET /api/v1/analytics/key-persons`, `/communities`, `/hidden-links` powered by Neo4j & NetworkX centrality and community detection.
+- **Unified Investigation Search:** `GET /api/v1/search?q=...` multi-domain search engine.
+- **Case Timeline Aggregator:** Chronological event timeline aggregator per case.
