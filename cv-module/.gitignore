@@ -1,0 +1,42 @@
+# ── Virtual environment ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Model weights & Ultralytics cache ─────────────────────────────────────────
+# yolo26n.pt is committed intentionally; exclude any auto-downloaded extras
+*.pt
+!yolo26n.pt
+runs/
+ultralytics/
+
+# ── Generated outputs (recreated by running evidence_processor.py) ────────────
+outputs/*
+!outputs/.keep
+
+# ── Generated evidence JSON (recreated by running evidence_processor.py) ──────
+evidence/*
+!evidence/.keep
+
+# ── OS / editor artefacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Build / dist ──────────────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
