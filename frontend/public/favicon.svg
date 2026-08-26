@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" fill="none">
+  <defs>
+    <linearGradient id="fg" x1="60" y1="0" x2="60" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0e2a4a"/>
+      <stop offset="100%" stop-color="#081c33"/>
+    </linearGradient>
+    <linearGradient id="fa" x1="60" y1="20" x2="60" y2="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+  <path d="M60 6C75 6 108 10 112 14C116 18 117 28 115 44C112 68 92 96 60 132C28 96 8 68 5 44C3 28 4 18 8 14C12 10 45 6 60 6Z" fill="url(#fg)" stroke="#164e63" stroke-width="1.2"/>
+  <path d="M60 16C72 16 100 19 103 22C106 25 107 33 105 46C102 66 86 88 60 120C34 88 18 66 15 46C13 33 14 25 17 22C20 19 48 16 60 16Z" fill="none" stroke="url(#fa)" stroke-width="0.6" opacity="0.4"/>
+  <line x1="60" y1="32" x2="88" y2="52" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="88" y1="52" x2="80" y2="88" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="80" y1="88" x2="60" y2="100" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="60" y1="100" x2="40" y2="88" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="40" y1="88" x2="32" y2="52" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="32" y1="52" x2="60" y2="32" stroke="#0891b2" stroke-width="0.7" opacity="0.5"/>
+  <line x1="60" y1="68" x2="60" y2="32" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <line x1="60" y1="68" x2="88" y2="52" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <line x1="60" y1="68" x2="80" y2="88" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <line x1="60" y1="68" x2="60" y2="100" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <line x1="60" y1="68" x2="40" y2="88" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <line x1="60" y1="68" x2="32" y2="52" stroke="#22d3ee" stroke-width="0.5" opacity="0.35"/>
+  <circle cx="60" cy="32" r="3.2" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="88" cy="52" r="2.6" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="80" cy="88" r="2.8" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="60" cy="100" r="2.4" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="40" cy="88" r="2.8" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="32" cy="52" r="2.6" fill="#0e7490" stroke="#22d3ee" stroke-width="0.8"/>
+  <circle cx="60" cy="68" r="5" fill="#164e63" stroke="#22d3ee" stroke-width="1.2"/>
+  <circle cx="60" cy="68" r="2.2" fill="#22d3ee" opacity="0.9"/>
+  <circle cx="60" cy="68" r="0.9" fill="#ecfeff" opacity="0.7"/>
+</svg>
