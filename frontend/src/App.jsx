@@ -6,7 +6,7 @@ import SearchOverlay from './components/SearchOverlay'
 import NotificationPanel from './components/NotificationPanel'
 import ProfileDropdown from './components/ProfileDropdown'
 import ToastContainer from './components/Toast'
-import InvestigationModal from './components/InvestigationModal'
+import InvestigationModal, { NewCaseModal } from './components/InvestigationModal'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -23,60 +23,29 @@ import './App.css'
 
 function AppContent() {
   const {
-    isAuthenticated,
-    page,
-    activeView,
-    investigationModalOpen,
-    setInvestigationModalOpen,
-    createInvestigation,
-    toasts,
-    settings,
+    isAuthenticated, page, activeView, investigationModalOpen, setInvestigationModalOpen,
+    createInvestigation, toasts, settings, newCaseModalOpen, setNewCaseModalOpen, addCase,
   } = useApp()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme || 'dark')
   }, [settings.theme])
 
-  if (page === 'landing') {
-    return (
-      <>
-        <LandingPage />
-        <ToastContainer toasts={toasts} />
-      </>
-    )
-  }
-
-  if (page === 'login' || !isAuthenticated) {
-    return (
-      <>
-        <Login />
-        <ToastContainer toasts={toasts} />
-      </>
-    )
-  }
+  if (page === 'landing') return <><LandingPage /><ToastContainer toasts={toasts} /></>
+  if (page === 'login' || !isAuthenticated) return <><Login /><ToastContainer toasts={toasts} /></>
 
   const renderPage = () => {
     switch (activeView) {
-      case 'network':
-        return <NetworkAnalysis />
-      case 'cases':
-        return <Cases />
-      case 'suspects':
-        return <Suspects />
-      case 'evidence':
-        return <Evidence />
-      case 'settings':
-        return <Settings />
-      case 'intelligence':
-        return <Intelligence />
-      case 'reports':
-        return <Reports />
-      case 'map':
-        return <MapView />
-      case 'analytics':
-        return <Analytics />
-      default:
-        return <Dashboard />
+      case 'network': return <NetworkAnalysis />
+      case 'cases': return <Cases />
+      case 'suspects': return <Suspects />
+      case 'evidence': return <Evidence />
+      case 'settings': return <Settings />
+      case 'intelligence': return <Intelligence />
+      case 'reports': return <Reports />
+      case 'map': return <MapView />
+      case 'analytics': return <Analytics />
+      default: return <Dashboard />
     }
   }
 
@@ -87,25 +56,16 @@ function AppContent() {
         <TopBar />
         <main className="content">{renderPage()}</main>
       </div>
-
       <SearchOverlay />
       <NotificationPanel />
       <ProfileDropdown />
       <ToastContainer toasts={toasts} />
-
-      <InvestigationModal
-        open={investigationModalOpen}
-        onClose={() => setInvestigationModalOpen(false)}
-        onCreate={createInvestigation}
-      />
+      <InvestigationModal open={investigationModalOpen} onClose={() => setInvestigationModalOpen(false)} onCreate={createInvestigation} />
+      <NewCaseModal open={newCaseModalOpen} onClose={() => setNewCaseModalOpen(false)} onCreate={addCase} />
     </div>
   )
 }
 
 export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  )
+  return <AppProvider><AppContent /></AppProvider>
 }

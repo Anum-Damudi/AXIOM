@@ -1,43 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { ENTITY_DETAILS, NETWORK_EDGES, NETWORK_NODES } from '../data/mockData'
 import Icon from './Icon'
 import RiskBadge from './RiskBadge'
 
 const NODE_SHAPES = {
-  PERSON: 'circle',
-  CASE: 'rect',
-  PHONE: 'diamond',
-  LOCATION: 'hex',
-  BANK: 'rect',
-  VEHICLE: 'rect',
-  EVIDENCE: 'circle',
-  ORGANIZATION: 'rect',
+  PERSON: 'circle', CASE: 'rect', PHONE: 'diamond', LOCATION: 'hex',
+  BANK: 'rect', VEHICLE: 'rect', EVIDENCE: 'circle', ORGANIZATION: 'rect',
+  OTHER: 'circle', CONTACT: 'diamond',
 }
 
 const TYPE_COLORS = {
-  PERSON: '#22d3ee',
-  CASE: '#38bdf8',
-  PHONE: '#fbbf24',
-  LOCATION: '#4ade80',
-  BANK: '#f87171',
-  VEHICLE: '#94a3b8',
-  EVIDENCE: '#fb923c',
-  ORGANIZATION: '#a78bfa',
+  PERSON: '#22d3ee', CASE: '#38bdf8', PHONE: '#fbbf24', LOCATION: '#4ade80',
+  BANK: '#f87171', VEHICLE: '#94a3b8', EVIDENCE: '#fb923c', ORGANIZATION: '#a78bfa',
+  OTHER: '#94a3b8', CONTACT: '#fbbf24',
 }
 
 const RELATIONSHIP_LABELS = {
-  'n-rk-n-case': 'LINKED TO',
-  'n-rk-n-pm': 'ASSOCIATED WITH',
-  'n-rk-n-as': 'ASSOCIATED WITH',
-  'n-rk-n-bank': 'TRANSFERRED FUNDS TO',
-  'n-rk-n-rm': 'ASSOCIATED WITH',
-  'n-pm-n-phone': 'CALLED',
-  'n-as-n-veh': 'USED',
-  'n-as-n-loc': 'LOCATED AT',
-  'n-case-n-evd': 'LINKED TO',
-  'n-rk-n-evd': 'LINKED TO',
-  'n-pm-n-case': 'LINKED TO',
-  'n-rm-n-case': 'LINKED TO',
+  ASSOCIATED_WITH: 'ASSOCIATED WITH', USES: 'USES', LOCATED_AT: 'LOCATED AT',
+  OWNS: 'OWNS', LINKED_TO: 'LINKED TO', RELATED_TO: 'RELATED TO',
+  CONNECTED_TO: 'CONNECTED TO', CALLED: 'CALLED', TRANSFERRED_FUNDS_TO: 'TRANSFERRED FUNDS TO',
 }
 
 function NodeShape({ node, selected, onClick, style }) {
@@ -65,7 +45,28 @@ function NodeShape({ node, selected, onClick, style }) {
       />
     )
   }
+  if (shape === 'hex') {
+    const r = 14
+    const points = Array.from({ length: 6 }, (_, i) => {
+      const angle = (Math.PI / 3) * i - Math.PI / 2
+      return `${node.x + r * Math.cos(angle)},${node.y + r * Math.sin(angle)}`
+    }).join(' ')
+    return <polygon points={points} {...common} />
+  }
   return <circle cx={node.x} cy={node.y} r={node.type === 'PERSON' ? 16 : 12} {...common} />
+}
+
+function layoutNodes(nodes, width = 800, height = 520) {
+  if (nodes.length === 0) return []
+  if (nodes.length === 1) return [{ ...nodes[0], x: width / 2, y: height / 2 }]
+
+  const cx = width / 2
+  const cy = height / 2
+  const radius = Math.min(width, height) * 0.35
+  return nodes.map((node, i) => {
+    const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2
+    return { ...node, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) }
+  })
 }
 
 export default function NetworkGraph({
@@ -78,6 +79,8 @@ export default function NetworkGraph({
   filters = {},
   focusEntityId,
   rotating = false,
+  nodes: nodesProp,
+  edges: edgesProp,
 }) {
   const [hoveredId, setHoveredId] = useState(null)
   const [rotationAngle, setRotationAngle] = useState(0)
@@ -89,7 +92,7 @@ export default function NetworkGraph({
       const animate = (now) => {
         const dt = (now - lastTime) / 1000
         lastTime = now
-        setRotationAngle((prev) => (prev + dt * 30) % 360)
+        setRotationAngle(prev => (prev + dt * 30) % 360)
         animRef.current = requestAnimationFrame(animate)
       }
       animRef.current = requestAnimationFrame(animate)
@@ -99,24 +102,31 @@ export default function NetworkGraph({
     }
   }, [rotating])
 
-  const filteredNodes = NETWORK_NODES.filter((n) => {
-    if (filters.risk && filters.risk !== 'all' && n.risk.toLowerCase() !== filters.risk) return false
+  const allNodes = nodesProp || []
+  const allEdges = edgesProp || []
+
+  const filteredNodes = allNodes.filter(n => {
+    if (filters.risk && filters.risk !== 'all' && (n.risk || '').toLowerCase() !== filters.risk) return false
     if (filters.type && filters.type !== 'all' && n.type !== filters.type) return false
     if (filters.search) {
       const q = filters.search.toLowerCase()
-      if (!n.label.toLowerCase().includes(q) && !n.id.toLowerCase().includes(q) && !(n.type || '').toLowerCase().includes(q)) return false
+      if (!(n.label || '').toLowerCase().includes(q) && !n.id.toLowerCase().includes(q) && !(n.type || '').toLowerCase().includes(q)) return false
     }
     return true
   })
 
-  const visibleIds = new Set(filteredNodes.map((n) => n.id))
-  const nodeMap = Object.fromEntries(NETWORK_NODES.map((n) => [n.id, n]))
+  const visibleIds = new Set(filteredNodes.map(n => n.id))
+  const nodeMap = Object.fromEntries(allNodes.map(n => [n.id, n]))
 
-  const filteredEdges = NETWORK_EDGES.filter(([a, b]) => visibleIds.has(a) && visibleIds.has(b))
+  const filteredEdges = allEdges.filter(e => {
+    const a = typeof e === 'string' || typeof e === 'number' ? e : e[0] || e.from
+    const b = typeof e === 'string' || typeof e === 'number' ? e : e[1] || e.to
+    return visibleIds.has(a) && visibleIds.has(b)
+  })
 
-  const focusNode = focusEntityId
-    ? filteredNodes.find((n) => n.entityId === focusEntityId)
-    : null
+  const laidOutNodes = layoutNodes(filteredNodes)
+
+  const focusNode = focusEntityId ? laidOutNodes.find(n => n.entityId === focusEntityId) : null
 
   const cx = 400
   const cy = 260
@@ -128,10 +138,7 @@ export default function NetworkGraph({
     const dy = node.y - cy
     const dist = Math.sqrt(dx * dx + dy * dy)
     const origAngle = Math.atan2(dy, dx)
-    return {
-      x: cx + dist * Math.cos(origAngle + angleRad),
-      y: cy + dist * Math.sin(origAngle + angleRad),
-    }
+    return { x: cx + dist * Math.cos(origAngle + angleRad), y: cy + dist * Math.sin(origAngle + angleRad) }
   }
 
   return (
@@ -143,70 +150,63 @@ export default function NetworkGraph({
           </marker>
         </defs>
         <g transform={`translate(${panX} ${panY}) translate(400 260) scale(${zoom}) translate(-400 -260)`}>
-          {filteredEdges.map(([a, b]) => {
+          {filteredEdges.map((edge, i) => {
+            const a = typeof edge === 'string' || typeof edge === 'number' ? edge : edge[0] || edge.from
+            const b = typeof edge === 'string' || typeof edge === 'number' ? edge : edge[1] || edge.to
             const na = nodeMap[a]
             const nb = nodeMap[b]
-            const posA = getRotatedPos(na)
-            const posB = getRotatedPos(nb)
+            if (!na || !nb) return null
+            const posA = getRotatedPos(laidOutNodes.find(n => n.id === a) || na)
+            const posB = getRotatedPos(laidOutNodes.find(n => n.id === b) || nb)
             const highlighted = hoveredId === a || hoveredId === b || selectedNodeId === a || selectedNodeId === b
-            const edgeKey = `${a}-${b}`
-            const label = RELATIONSHIP_LABELS[edgeKey]
+            const edgeType = typeof edge === 'object' && edge.type ? edge.type : null
+            const edgeLabel = edgeType ? RELATIONSHIP_LABELS[edgeType] || edgeType : null
             const midX = (posA.x + posB.x) / 2
             const midY = (posA.y + posB.y) / 2
             return (
-              <g key={edgeKey}>
-                <line
-                  x1={posA.x}
-                  y1={posA.y}
-                  x2={posB.x}
-                  y2={posB.y}
+              <g key={`edge-${a}-${b}-${i}`}>
+                <line x1={posA.x} y1={posA.y} x2={posB.x} y2={posB.y}
                   className={`network-graph__edge ${highlighted ? 'network-graph__edge--active' : ''}`}
                   markerEnd={highlighted ? 'url(#arrowhead)' : undefined}
                 />
-                {label && highlighted && (
+                {edgeLabel && highlighted && (
                   <text x={midX} y={midY - 6} className="network-graph__edge-label" textAnchor="middle">
-                    {label}
+                    {edgeLabel}
                   </text>
                 )}
               </g>
             )
           })}
-          {filteredNodes.map((node) => {
+          {laidOutNodes.map(node => {
             const pos = getRotatedPos(node)
             const rotatedNode = { ...node, x: pos.x, y: pos.y }
             return (
-              <g
-                key={node.id}
-                className={`network-node network-node--${node.type.toLowerCase()}`}
-                onMouseEnter={() => setHoveredId(node.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                {focusNode?.id === node.id && (
-                  <circle cx={pos.x} cy={pos.y} r={28} className="network-node__focus-ring" />
-                )}
-                <NodeShape
-                  node={rotatedNode}
-                  selected={selectedNodeId === node.id}
-                  onClick={onNodeClick || (() => {})}
-                />
-                <text x={pos.x} y={pos.y + 28} className="network-graph__label">
-                  {node.label}
-                </text>
-                <text x={pos.x} y={pos.y + 40} className="network-graph__type">
-                  {node.type}
-                </text>
+              <g key={node.id} className={`network-node network-node--${(node.type || 'other').toLowerCase()}`}
+                onMouseEnter={() => setHoveredId(node.id)} onMouseLeave={() => setHoveredId(null)}>
+                {focusNode?.id === node.id && <circle cx={pos.x} cy={pos.y} r={28} className="network-node__focus-ring" />}
+                <NodeShape node={rotatedNode} selected={selectedNodeId === node.id} onClick={onNodeClick || (() => {})} />
+                <text x={pos.x} y={pos.y + 28} className="network-graph__label">{node.label}</text>
+                <text x={pos.x} y={pos.y + 40} className="network-graph__type">{node.type}</text>
               </g>
             )
           })}
+          {laidOutNodes.length === 0 && (
+            <text x={400} y={260} textAnchor="middle" fill="var(--text-muted)" fontSize="14" fontFamily="var(--font-sans)">
+              No entities to display
+            </text>
+          )}
         </g>
       </svg>
     </div>
   )
 }
 
-export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections, onAddToInvestigation }) {
-  const details = ENTITY_DETAILS[nodeId]
-  if (!details) {
+export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections, onAddToInvestigation, node: nodeProp, relationships: relsProp, entities: entitiesProp }) {
+  const node = nodeProp
+  const allRels = relsProp || []
+  const allEntities = entitiesProp || []
+
+  if (!node) {
     return (
       <div className="entity-panel entity-panel--empty">
         <div className="entity-panel__empty-icon">
@@ -218,12 +218,12 @@ export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections,
     )
   }
 
-  const node = NETWORK_NODES.find((n) => n.id === nodeId)
-  const connections = NETWORK_EDGES.filter(([a, b]) => a === nodeId || b === nodeId)
-  const connectedNodes = connections.map(([a, b]) => {
-    const otherId = a === nodeId ? b : a
-    return { ...nodeMap[otherId], relationship: RELATIONSHIP_LABELS[`${a}-${b}`] || RELATIONSHIP_LABELS[`${b}-${a}`] || 'CONNECTED' }
-  }).filter(Boolean)
+  const nodeRels = allRels.filter(r => r.fromId === nodeId || r.toId === nodeId)
+  const connectedEntities = nodeRels.map(r => {
+    const otherId = r.fromId === nodeId ? r.toId : r.fromId
+    const other = allEntities.find(e => e.id === otherId)
+    return { ...other, relationship: RELATIONSHIP_LABELS[r.type] || r.type || 'CONNECTED' }
+  }).filter(e => e && e.name)
 
   return (
     <div className="entity-panel">
@@ -237,58 +237,37 @@ export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections,
       </header>
       <div className="entity-panel__body">
         <div className="entity-panel__identity">
-          <h4 className="entity-panel__name">{details.name}</h4>
-          {node && <span className="entity-panel__id">{node.id} · {node.entityId || 'N/A'}</span>}
+          <h4 className="entity-panel__name">{node.name || node.label}</h4>
+          <span className="entity-panel__id">{node.id} {node.entityId ? `· ${node.entityId}` : ''}</span>
           <div className="entity-panel__meta">
-            <span className="entity-panel__type">{details.type}</span>
-            <RiskBadge level={details.risk} />
+            <span className="entity-panel__type">{node.type}</span>
+            <RiskBadge level={node.risk} />
           </div>
         </div>
-
         <dl className="entity-panel__dl">
-          <div><dt>Connections</dt><dd>{connections.length} direct</dd></div>
-          <div><dt>Evidence</dt><dd>{details.evidenceCount} items</dd></div>
-          <div><dt>Last Activity</dt><dd>{details.lastActivity}</dd></div>
+          <div><dt>Connections</dt><dd>{nodeRels.length} direct</dd></div>
+          {node.description && <div><dt>Description</dt><dd>{node.description}</dd></div>}
         </dl>
-
-        <div className="entity-panel__section">
-          <span className="entity-panel__section-label">AI Summary</span>
-          <p className="entity-panel__summary">{details.summary}</p>
-        </div>
-
-        {connectedNodes.length > 0 && (
+        {connectedEntities.length > 0 && (
           <div className="entity-panel__section">
             <span className="entity-panel__section-label">Relationships</span>
             <div className="entity-panel__relationships">
-              {connectedNodes.map((cn, i) => (
+              {connectedEntities.map((cn, i) => (
                 <div key={i} className="entity-panel__rel-item">
                   <span className="entity-panel__rel-label">{cn.relationship}</span>
-                  <span className="entity-panel__rel-name">{cn.label}</span>
+                  <span className="entity-panel__rel-name">{cn.name}</span>
                   <span className="entity-panel__rel-type">{cn.type}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        {details.cases && details.cases.length > 0 && (
-          <div className="entity-panel__section">
-            <span className="entity-panel__section-label">Linked Cases</span>
-            <div className="entity-panel__cases">
-              {details.cases.map((c, i) => (
-                <span key={i} className="entity-panel__case-tag">{c}</span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       <footer className="entity-panel__footer">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onViewProfile}>View Profile</button>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onViewConnections}>Connections</button>
-        <button type="button" className="btn btn--accent btn--sm" onClick={onAddToInvestigation}>Add to Investigation</button>
+        {onViewProfile && <button type="button" className="btn btn--ghost btn--sm" onClick={onViewProfile}>View Profile</button>}
+        {onViewConnections && <button type="button" className="btn btn--ghost btn--sm" onClick={onViewConnections}>Connections</button>}
+        {onAddToInvestigation && <button type="button" className="btn btn--accent btn--sm" onClick={onAddToInvestigation}>Add to Investigation</button>}
       </footer>
     </div>
   )
 }
-
-const nodeMap = Object.fromEntries(NETWORK_NODES.map((n) => [n.id, n]))
