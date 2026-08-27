@@ -82,7 +82,7 @@ export function exportReportPdf(report) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...TEXT_SECONDARY)
-    doc.text('\u2022', x, y)
+    doc.text('•', x, y)
     const lines = doc.splitTextToSize(text, contentW - indent - 7)
     doc.text(lines, x + 5, y)
     y += lines.length * 4 + 2
@@ -235,7 +235,7 @@ export function exportReportPdf(report) {
   } else {
     report.suspects.forEach((s) => {
       checkPage(22)
-      const nameStr = `${s.name}${s.alias ? ` (${s.alias})` : ''}`
+      const nameStr = `${s.name}${s.role ? ` (${s.role})` : ''}`
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(10)
       doc.setTextColor(...TEXT_PRIMARY)
@@ -249,17 +249,16 @@ export function exportReportPdf(report) {
       doc.setTextColor(255, 255, 255)
       doc.text(riskLabel(s.risk), margin + nameW + 6.5, y - 0.5)
       y += 6
-      addKeyValue('Risk Score:', `${s.riskScore}/100`)
-      addKeyValue('Connections:', String(s.connections))
-      addKeyValue('Status:', s.status)
-      addKeyValue('Locations:', s.locations.join(', '))
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8.5)
-      doc.setTextColor(...TEXT_SECONDARY)
-      const sumLines = doc.splitTextToSize(s.summary, contentW - 4)
-      checkPage(sumLines.length * 3.8 + 1)
-      doc.text(sumLines, margin, y)
-      y += sumLines.length * 3.8 + 4
+      addKeyValue('Role:', s.role || 'Person')
+      if (s.description) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5)
+        doc.setTextColor(...TEXT_SECONDARY)
+        const descLines = doc.splitTextToSize(s.description, contentW - 4)
+        checkPage(descLines.length * 3.8 + 1)
+        doc.text(descLines, margin, y)
+        y += descLines.length * 3.8 + 4
+      }
     })
   }
 
@@ -282,7 +281,7 @@ export function exportReportPdf(report) {
   } else {
     report.locations.forEach((loc) => {
       checkPage(7)
-      addBullet(`${loc.name} \u2014 ${loc.description}`)
+      addBullet(`${loc.name} — ${loc.description}`)
     })
   }
   y += 3
@@ -294,7 +293,7 @@ export function exportReportPdf(report) {
   } else {
     report.evidence.forEach((e) => {
       checkPage(7)
-      addBullet(`${e.id}: ${e.description} (Confidence: ${e.confidence}%, Status: ${e.status})`)
+      addBullet(`${e.title || e.id}: ${e.description || 'No description'} (Type: ${e.type}, Status: ${e.status})`)
     })
   }
   y += 3
@@ -326,7 +325,7 @@ export function exportReportPdf(report) {
 
   // ── 13. Conclusion ──────────────────────────────
   addSectionTitle('13. Conclusion')
-  addText(report.conclusion || `This comprehensive investigation report consolidates all intelligence gathered to date for ${report.caseTitle}. The analysis reveals a structured criminal network with ${report.network.totalNodes} mapped entities and ${report.network.totalEdges} direct relationships. Immediate action is recommended on ${report.suspects.filter((s) => s.risk === 'HIGH').length} high-risk suspects and ${report.evidence.filter((e) => e.confidence < 80).length} evidence items requiring verification.`, 9.5, TEXT_SECONDARY)
+  addText(report.conclusion || `This comprehensive investigation report consolidates all intelligence gathered to date for ${report.caseTitle}. The analysis reveals a structured criminal network with ${report.network.totalNodes} mapped entities and ${report.network.totalEdges} direct relationships. ${report.suspects.length} suspects identified, ${report.evidence.length} evidence items documented.`, 9.5, TEXT_SECONDARY)
   y += 6
 
   // ── Classification Footer ──────────────────────────────
@@ -339,7 +338,7 @@ export function exportReportPdf(report) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7.5)
   doc.setTextColor(...ACCENT)
-  doc.text('CLASSIFICATION: CONFIDENTIAL \u2014 LAW ENFORCEMENT SENSITIVE', margin + 4, y + 6.5)
+  doc.text('CLASSIFICATION: CONFIDENTIAL — LAW ENFORCEMENT SENSITIVE', margin + 4, y + 6.5)
   y += 14
 
   // ── Page Footer ──────────────────────────────
@@ -351,7 +350,7 @@ export function exportReportPdf(report) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
     doc.setTextColor(148, 163, 184)
-    doc.text('NEXUS-CRIME \u2014 Confidential Investigation Report', margin, pageH - 5)
+    doc.text('NEXUS-CRIME — Confidential Investigation Report', margin, pageH - 5)
     doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 5, { align: 'right' })
     doc.text(report.generatedAt, pageW / 2, pageH - 5, { align: 'center' })
   }
