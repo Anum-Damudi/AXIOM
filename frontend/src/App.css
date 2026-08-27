@@ -3065,6 +3065,68 @@
   border-color: var(--border-accent);
 }
 
+[data-theme="light"] .hero {
+  background: linear-gradient(135deg, #ecfeff 0%, #f0f9ff 50%, #f0fdfa 100%);
+  border-color: var(--border-default);
+}
+
+[data-theme="light"] .hero::before {
+  background: radial-gradient(circle, rgba(8, 145, 178, 0.12) 0%, transparent 70%);
+}
+
+[data-theme="light"] .hero__title {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .hero__desc {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .hero__eyebrow {
+  color: var(--accent);
+}
+
+[data-theme="light"] .hero__grid {
+  border-color: rgba(8, 145, 178, 0.25);
+  background:
+    radial-gradient(circle at center, rgba(8, 145, 178, 0.1) 0%, transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 19px,
+      rgba(8, 145, 178, 0.06) 19px,
+      rgba(8, 145, 178, 0.06) 20px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 19px,
+      rgba(8, 145, 178, 0.06) 19px,
+      rgba(8, 145, 178, 0.06) 20px
+    );
+  box-shadow: 0 0 40px rgba(8, 145, 178, 0.06);
+}
+
+[data-theme="light"] .hero .btn--ghost {
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+[data-theme="light"] .hero .btn--ghost:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+}
+
+[data-theme="light"] .hero .btn--primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+[data-theme="light"] .hero .btn--primary:hover {
+  background: var(--accent-dim);
+}
+
 [data-theme="light"] .network-canvas {
   background: #f1f5f9;
 }
