@@ -1,0 +1,102 @@
+[
+  {
+    "id": "V001",
+    "plate_number": "KA-28-EC-5040",
+    "type": "van"
+  },
+  {
+    "id": "V002",
+    "plate_number": "KA-84-GG-6930",
+    "type": "bike"
+  },
+  {
+    "id": "V003",
+    "plate_number": "KA-27-HB-1771",
+    "type": "car"
+  },
+  {
+    "id": "V004",
+    "plate_number": "KA-29-CG-2040",
+    "type": "truck"
+  },
+  {
+    "id": "V005",
+    "plate_number": "KA-58-HE-1188",
+    "type": "car"
+  },
+  {
+    "id": "V006",
+    "plate_number": "KA-97-EF-2827",
+    "type": "van"
+  },
+  {
+    "id": "V007",
+    "plate_number": "KA-65-CH-1053",
+    "type": "van"
+  },
+  {
+    "id": "V008",
+    "plate_number": "KA-74-CB-5889",
+    "type": "bike"
+  },
+  {
+    "id": "V009",
+    "plate_number": "KA-29-FC-9837",
+    "type": "car"
+  },
+  {
+    "id": "V010",
+    "plate_number": "KA-86-FH-1319",
+    "type": "car"
+  },
+  {
+    "id": "V011",
+    "plate_number": "KA-56-ED-1949",
+    "type": "bike"
+  },
+  {
+    "id": "V012",
+    "plate_number": "KA-82-BB-8962",
+    "type": "car"
+  },
+  {
+    "id": "V013",
+    "plate_number": "KA-78-CC-8787",
+    "type": "bike"
+  },
+  {
+    "id": "V014",
+    "plate_number": "KA-43-GD-9835",
+    "type": "bike"
+  },
+  {
+    "id": "V015",
+    "plate_number": "KA-49-GF-8177",
+    "type": "truck"
+  },
+  {
+    "id": "V016",
+    "plate_number": "KA-25-DD-2049",
+    "type": "van"
+  },
+  {
+    "id": "V017",
+    "plate_number": "KA-12-DD-1117",
+    "type": "car"
+  },
+  {
+    "id": "V018",
+    "plate_number": "KA-90-AD-2104",
+    "type": "car"
+  },
+  {
+    "id": "V019",
+    "plate_number": "KA-52-BD-5562",
+    "type": "truck"
+  },
+  {
+    "id": "V020",
+    "plate_number": "KA-37-CH-4981",
+    "type": "truck"
+  }
+]

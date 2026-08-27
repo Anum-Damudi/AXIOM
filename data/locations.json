@@ -1,0 +1,92 @@
+[
+  {
+    "id": "L001",
+    "name": "Keithmouth",
+    "lat": -6.4747495,
+    "lng": -54.288165
+  },
+  {
+    "id": "L002",
+    "name": "New Richardville",
+    "lat": 63.323248,
+    "lng": 5.724874
+  },
+  {
+    "id": "L003",
+    "name": "Barbermouth",
+    "lat": 71.8656105,
+    "lng": -97.199789
+  },
+  {
+    "id": "L004",
+    "name": "Lake Jeremyhaven",
+    "lat": 51.457816,
+    "lng": -81.457687
+  },
+  {
+    "id": "L005",
+    "name": "Kellichester",
+    "lat": -59.5592755,
+    "lng": -117.930225
+  },
+  {
+    "id": "L006",
+    "name": "Patrickchester",
+    "lat": -81.4992985,
+    "lng": -22.011142
+  },
+  {
+    "id": "L007",
+    "name": "Gainesberg",
+    "lat": 25.763449,
+    "lng": -17.188906
+  },
+  {
+    "id": "L008",
+    "name": "Michaelberg",
+    "lat": -52.482213,
+    "lng": -69.845055
+  },
+  {
+    "id": "L009",
+    "name": "Smithmouth",
+    "lat": 84.90009,
+    "lng": -47.688506
+  },
+  {
+    "id": "L010",
+    "name": "Crystalport",
+    "lat": -59.9141645,
+    "lng": -4.488354
+  },
+  {
+    "id": "L011",
+    "name": "Lake Tricia",
+    "lat": -27.616726,
+    "lng": 112.917895
+  },
+  {
+    "id": "L012",
+    "name": "Lopezmouth",
+    "lat": -59.607752,
+    "lng": 10.562942
+  },
+  {
+    "id": "L013",
+    "name": "West Johnton",
+    "lat": -19.9795915,
+    "lng": -140.573235
+  },
+  {
+    "id": "L014",
+    "name": "South Robert",
+    "lat": 66.020639,
+    "lng": -118.996331
+  },
+  {
+    "id": "L015",
+    "name": "Barronside",
+    "lat": 65.5375075,
+    "lng": -39.433893
+  }
+]

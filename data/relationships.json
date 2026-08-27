@@ -1,0 +1,702 @@
+[
+  {
+    "id": "R001",
+    "source": "P016",
+    "target": "P013",
+    "type": "MET",
+    "date": "2026-04-18"
+  },
+  {
+    "id": "R002",
+    "source": "P035",
+    "target": "P029",
+    "type": "CALLED",
+    "date": "2026-07-17"
+  },
+  {
+    "id": "R003",
+    "source": "P028",
+    "target": "P012",
+    "type": "CALLED",
+    "date": "2026-07-29"
+  },
+  {
+    "id": "R004",
+    "source": "P030",
+    "target": "V008",
+    "type": "USED",
+    "date": "2026-05-17"
+  },
+  {
+    "id": "R005",
+    "source": "P029",
+    "target": "P036",
+    "type": "MET",
+    "date": "2026-05-16"
+  },
+  {
+    "id": "R006",
+    "source": "P004",
+    "target": "P042",
+    "type": "MET",
+    "date": "2026-06-07"
+  },
+  {
+    "id": "R007",
+    "source": "P001",
+    "target": "C003",
+    "type": "INVOLVED_IN",
+    "date": "2026-01-05"
+  },
+  {
+    "id": "R008",
+    "source": "P011",
+    "target": "P027",
+    "type": "CALLED",
+    "date": "2026-07-04"
+  },
+  {
+    "id": "R009",
+    "source": "P031",
+    "target": "L004",
+    "type": "LOCATED_AT",
+    "date": "2026-05-12"
+  },
+  {
+    "id": "R010",
+    "source": "P004",
+    "target": "L003",
+    "type": "LOCATED_AT",
+    "date": "2026-02-05"
+  },
+  {
+    "id": "R011",
+    "source": "P001",
+    "target": "L007",
+    "type": "LOCATED_AT",
+    "date": "2026-04-18"
+  },
+  {
+    "id": "R012",
+    "source": "P030",
+    "target": "V010",
+    "type": "USED",
+    "date": "2026-01-11"
+  },
+  {
+    "id": "R013",
+    "source": "P045",
+    "target": "L012",
+    "type": "LOCATED_AT",
+    "date": "2026-03-28"
+  },
+  {
+    "id": "R014",
+    "source": "P043",
+    "target": "C016",
+    "type": "INVOLVED_IN",
+    "date": "2026-06-29"
+  },
+  {
+    "id": "R015",
+    "source": "P013",
+    "target": "P019",
+    "type": "CALLED",
+    "date": "2026-07-27"
+  },
+  {
+    "id": "R016",
+    "source": "P004",
+    "target": "P038",
+    "type": "CALLED",
+    "date": "2026-06-17"
+  },
+  {
+    "id": "R017",
+    "source": "P035",
+    "target": "P004",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-02-21"
+  },
+  {
+    "id": "R018",
+    "source": "P021",
+    "target": "P004",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-04-01"
+  },
+  {
+    "id": "R019",
+    "source": "P038",
+    "target": "P031",
+    "type": "MET",
+    "date": "2026-06-16"
+  },
+  {
+    "id": "R020",
+    "source": "P034",
+    "target": "C006",
+    "type": "INVOLVED_IN",
+    "date": "2026-01-05"
+  },
+  {
+    "id": "R021",
+    "source": "P033",
+    "target": "P006",
+    "type": "MET",
+    "date": "2026-05-25"
+  },
+  {
+    "id": "R022",
+    "source": "P005",
+    "target": "P039",
+    "type": "CALLED",
+    "date": "2026-05-06"
+  },
+  {
+    "id": "R023",
+    "source": "P044",
+    "target": "P016",
+    "type": "MET",
+    "date": "2026-04-04"
+  },
+  {
+    "id": "R024",
+    "source": "P008",
+    "target": "L015",
+    "type": "LOCATED_AT",
+    "date": "2026-05-09"
+  },
+  {
+    "id": "R025",
+    "source": "P016",
+    "target": "C019",
+    "type": "INVOLVED_IN",
+    "date": "2026-01-24"
+  },
+  {
+    "id": "R026",
+    "source": "P003",
+    "target": "C020",
+    "type": "INVOLVED_IN",
+    "date": "2026-07-03"
+  },
+  {
+    "id": "R027",
+    "source": "P027",
+    "target": "P043",
+    "type": "MET",
+    "date": "2026-01-18"
+  },
+  {
+    "id": "R028",
+    "source": "P037",
+    "target": "C017",
+    "type": "INVOLVED_IN",
+    "date": "2026-01-03"
+  },
+  {
+    "id": "R029",
+    "source": "P017",
+    "target": "V007",
+    "type": "USED",
+    "date": "2026-02-09"
+  },
+  {
+    "id": "R030",
+    "source": "P046",
+    "target": "P021",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-07-09"
+  },
+  {
+    "id": "R031",
+    "source": "P017",
+    "target": "P026",
+    "type": "CALLED",
+    "date": "2026-02-08"
+  },
+  {
+    "id": "R032",
+    "source": "P043",
+    "target": "P042",
+    "type": "CALLED",
+    "date": "2026-07-19"
+  },
+  {
+    "id": "R033",
+    "source": "P030",
+    "target": "V011",
+    "type": "USED",
+    "date": "2026-03-04"
+  },
+  {
+    "id": "R034",
+    "source": "P001",
+    "target": "P030",
+    "type": "MET",
+    "date": "2026-04-20"
+  },
+  {
+    "id": "R035",
+    "source": "P037",
+    "target": "C004",
+    "type": "INVOLVED_IN",
+    "date": "2026-03-23"
+  },
+  {
+    "id": "R036",
+    "source": "P035",
+    "target": "P014",
+    "type": "MET",
+    "date": "2026-07-27"
+  },
+  {
+    "id": "R037",
+    "source": "P017",
+    "target": "C005",
+    "type": "INVOLVED_IN",
+    "date": "2026-02-17"
+  },
+  {
+    "id": "R038",
+    "source": "P005",
+    "target": "V008",
+    "type": "USED",
+    "date": "2026-03-23"
+  },
+  {
+    "id": "R039",
+    "source": "P019",
+    "target": "V006",
+    "type": "USED",
+    "date": "2026-06-11"
+  },
+  {
+    "id": "R040",
+    "source": "P035",
+    "target": "L012",
+    "type": "LOCATED_AT",
+    "date": "2026-08-25"
+  },
+  {
+    "id": "R041",
+    "source": "P040",
+    "target": "V017",
+    "type": "USED",
+    "date": "2026-07-09"
+  },
+  {
+    "id": "R042",
+    "source": "P043",
+    "target": "P036",
+    "type": "MET",
+    "date": "2026-01-10"
+  },
+  {
+    "id": "R043",
+    "source": "P043",
+    "target": "V004",
+    "type": "USED",
+    "date": "2026-05-30"
+  },
+  {
+    "id": "R044",
+    "source": "P017",
+    "target": "P008",
+    "type": "CALLED",
+    "date": "2026-03-01"
+  },
+  {
+    "id": "R045",
+    "source": "P048",
+    "target": "P036",
+    "type": "MET",
+    "date": "2026-08-16"
+  },
+  {
+    "id": "R046",
+    "source": "P018",
+    "target": "P019",
+    "type": "CALLED",
+    "date": "2026-02-06"
+  },
+  {
+    "id": "R047",
+    "source": "P014",
+    "target": "C011",
+    "type": "INVOLVED_IN",
+    "date": "2026-01-02"
+  },
+  {
+    "id": "R048",
+    "source": "P044",
+    "target": "P041",
+    "type": "CALLED",
+    "date": "2026-04-11"
+  },
+  {
+    "id": "R049",
+    "source": "P033",
+    "target": "V016",
+    "type": "USED",
+    "date": "2026-02-17"
+  },
+  {
+    "id": "R050",
+    "source": "P004",
+    "target": "V003",
+    "type": "USED",
+    "date": "2026-01-20"
+  },
+  {
+    "id": "R051",
+    "source": "P028",
+    "target": "P018",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-08-11"
+  },
+  {
+    "id": "R052",
+    "source": "P001",
+    "target": "P022",
+    "type": "MET",
+    "date": "2026-04-07"
+  },
+  {
+    "id": "R053",
+    "source": "P041",
+    "target": "P017",
+    "type": "CALLED",
+    "date": "2026-05-26"
+  },
+  {
+    "id": "R054",
+    "source": "P048",
+    "target": "P029",
+    "type": "CALLED",
+    "date": "2026-01-21"
+  },
+  {
+    "id": "R055",
+    "source": "P046",
+    "target": "C014",
+    "type": "INVOLVED_IN",
+    "date": "2026-08-23"
+  },
+  {
+    "id": "R056",
+    "source": "P001",
+    "target": "C004",
+    "type": "INVOLVED_IN",
+    "date": "2026-07-18"
+  },
+  {
+    "id": "R057",
+    "source": "P045",
+    "target": "P010",
+    "type": "MET",
+    "date": "2026-05-28"
+  },
+  {
+    "id": "R058",
+    "source": "P003",
+    "target": "C012",
+    "type": "INVOLVED_IN",
+    "date": "2026-04-29"
+  },
+  {
+    "id": "R059",
+    "source": "P036",
+    "target": "C005",
+    "type": "INVOLVED_IN",
+    "date": "2026-03-02"
+  },
+  {
+    "id": "R060",
+    "source": "P009",
+    "target": "L001",
+    "type": "LOCATED_AT",
+    "date": "2026-02-01"
+  },
+  {
+    "id": "R061",
+    "source": "P024",
+    "target": "V002",
+    "type": "USED",
+    "date": "2026-01-02"
+  },
+  {
+    "id": "R062",
+    "source": "P014",
+    "target": "V008",
+    "type": "USED",
+    "date": "2026-05-28"
+  },
+  {
+    "id": "R063",
+    "source": "P007",
+    "target": "P023",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-05-03"
+  },
+  {
+    "id": "R064",
+    "source": "P027",
+    "target": "C020",
+    "type": "INVOLVED_IN",
+    "date": "2026-08-01"
+  },
+  {
+    "id": "R065",
+    "source": "P010",
+    "target": "P016",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-04-13"
+  },
+  {
+    "id": "R066",
+    "source": "P012",
+    "target": "P027",
+    "type": "CALLED",
+    "date": "2026-07-19"
+  },
+  {
+    "id": "R067",
+    "source": "P012",
+    "target": "P048",
+    "type": "MET",
+    "date": "2026-06-25"
+  },
+  {
+    "id": "R068",
+    "source": "P027",
+    "target": "V008",
+    "type": "USED",
+    "date": "2026-07-15"
+  },
+  {
+    "id": "R069",
+    "source": "P011",
+    "target": "V004",
+    "type": "USED",
+    "date": "2026-05-13"
+  },
+  {
+    "id": "R070",
+    "source": "P003",
+    "target": "L014",
+    "type": "LOCATED_AT",
+    "date": "2026-04-15"
+  },
+  {
+    "id": "R071",
+    "source": "P015",
+    "target": "L004",
+    "type": "LOCATED_AT",
+    "date": "2026-02-14"
+  },
+  {
+    "id": "R072",
+    "source": "P023",
+    "target": "L005",
+    "type": "LOCATED_AT",
+    "date": "2026-04-10"
+  },
+  {
+    "id": "R073",
+    "source": "P015",
+    "target": "P002",
+    "type": "CALLED",
+    "date": "2026-08-17"
+  },
+  {
+    "id": "R074",
+    "source": "P013",
+    "target": "P026",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-01-08"
+  },
+  {
+    "id": "R075",
+    "source": "P018",
+    "target": "V003",
+    "type": "USED",
+    "date": "2026-03-20"
+  },
+  {
+    "id": "R076",
+    "source": "P023",
+    "target": "V017",
+    "type": "USED",
+    "date": "2026-01-07"
+  },
+  {
+    "id": "R077",
+    "source": "P044",
+    "target": "L014",
+    "type": "LOCATED_AT",
+    "date": "2026-03-27"
+  },
+  {
+    "id": "R078",
+    "source": "P022",
+    "target": "C001",
+    "type": "INVOLVED_IN",
+    "date": "2026-04-02"
+  },
+  {
+    "id": "R079",
+    "source": "P017",
+    "target": "P012",
+    "type": "MET",
+    "date": "2026-08-07"
+  },
+  {
+    "id": "R080",
+    "source": "P017",
+    "target": "C002",
+    "type": "INVOLVED_IN",
+    "date": "2026-06-15"
+  },
+  {
+    "id": "R081",
+    "source": "P039",
+    "target": "P028",
+    "type": "MET",
+    "date": "2026-07-25"
+  },
+  {
+    "id": "R082",
+    "source": "P047",
+    "target": "V011",
+    "type": "USED",
+    "date": "2026-05-08"
+  },
+  {
+    "id": "R083",
+    "source": "P039",
+    "target": "L009",
+    "type": "LOCATED_AT",
+    "date": "2026-01-23"
+  },
+  {
+    "id": "R084",
+    "source": "P025",
+    "target": "P037",
+    "type": "MET",
+    "date": "2026-05-10"
+  },
+  {
+    "id": "R085",
+    "source": "P017",
+    "target": "P003",
+    "type": "CALLED",
+    "date": "2026-01-24"
+  },
+  {
+    "id": "R086",
+    "source": "P028",
+    "target": "P001",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-08-09"
+  },
+  {
+    "id": "R087",
+    "source": "P035",
+    "target": "C007",
+    "type": "INVOLVED_IN",
+    "date": "2026-03-11"
+  },
+  {
+    "id": "R088",
+    "source": "P028",
+    "target": "V003",
+    "type": "USED",
+    "date": "2026-01-19"
+  },
+  {
+    "id": "R089",
+    "source": "P022",
+    "target": "P040",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-08-25"
+  },
+  {
+    "id": "R090",
+    "source": "P043",
+    "target": "V004",
+    "type": "USED",
+    "date": "2026-02-12"
+  },
+  {
+    "id": "R091",
+    "source": "P020",
+    "target": "P033",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-06-01"
+  },
+  {
+    "id": "R092",
+    "source": "P043",
+    "target": "V014",
+    "type": "USED",
+    "date": "2026-03-07"
+  },
+  {
+    "id": "R093",
+    "source": "P026",
+    "target": "V010",
+    "type": "USED",
+    "date": "2026-06-26"
+  },
+  {
+    "id": "R094",
+    "source": "P009",
+    "target": "C007",
+    "type": "INVOLVED_IN",
+    "date": "2026-03-23"
+  },
+  {
+    "id": "R095",
+    "source": "P043",
+    "target": "L007",
+    "type": "LOCATED_AT",
+    "date": "2026-04-03"
+  },
+  {
+    "id": "R096",
+    "source": "P048",
+    "target": "P012",
+    "type": "TRANSFERRED_MONEY_TO",
+    "date": "2026-06-29"
+  },
+  {
+    "id": "R097",
+    "source": "P037",
+    "target": "C010",
+    "type": "INVOLVED_IN",
+    "date": "2026-03-20"
+  },
+  {
+    "id": "R098",
+    "source": "P036",
+    "target": "L014",
+    "type": "LOCATED_AT",
+    "date": "2026-04-19"
+  },
+  {
+    "id": "R099",
+    "source": "P020",
+    "target": "P019",
+    "type": "MET",
+    "date": "2026-05-30"
+  },
+  {
+    "id": "R100",
+    "source": "P028",
+    "target": "P038",
+    "type": "CALLED",
+    "date": "2026-03-21"
+  }
+]

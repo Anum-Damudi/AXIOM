@@ -1,0 +1,122 @@
+[
+  {
+    "id": "C001",
+    "title": "Case 1: Condition reach last.",
+    "date": "2026-03-20",
+    "status": "closed"
+  },
+  {
+    "id": "C002",
+    "title": "Case 2: Arm staff nor beyond begin.",
+    "date": "2026-01-08",
+    "status": "open"
+  },
+  {
+    "id": "C003",
+    "title": "Case 3: Fine system.",
+    "date": "2026-04-13",
+    "status": "open"
+  },
+  {
+    "id": "C004",
+    "title": "Case 4: One sort.",
+    "date": "2026-01-28",
+    "status": "open"
+  },
+  {
+    "id": "C005",
+    "title": "Case 5: Man true lot.",
+    "date": "2026-02-20",
+    "status": "under investigation"
+  },
+  {
+    "id": "C006",
+    "title": "Case 6: Music medical budget white.",
+    "date": "2026-01-07",
+    "status": "closed"
+  },
+  {
+    "id": "C007",
+    "title": "Case 7: Human safe tonight oil table.",
+    "date": "2026-04-14",
+    "status": "closed"
+  },
+  {
+    "id": "C008",
+    "title": "Case 8: Person skill general resource.",
+    "date": "2026-02-19",
+    "status": "closed"
+  },
+  {
+    "id": "C009",
+    "title": "Case 9: Produce into full two present.",
+    "date": "2026-01-06",
+    "status": "closed"
+  },
+  {
+    "id": "C010",
+    "title": "Case 10: Leader anyone.",
+    "date": "2026-07-03",
+    "status": "closed"
+  },
+  {
+    "id": "C011",
+    "title": "Case 11: Sing now tough clear as.",
+    "date": "2026-05-06",
+    "status": "under investigation"
+  },
+  {
+    "id": "C012",
+    "title": "Case 12: Language edge edge tree page.",
+    "date": "2026-03-09",
+    "status": "open"
+  },
+  {
+    "id": "C013",
+    "title": "Case 13: World better form.",
+    "date": "2026-01-03",
+    "status": "under investigation"
+  },
+  {
+    "id": "C014",
+    "title": "Case 14: Coach gun prevent.",
+    "date": "2026-01-07",
+    "status": "under investigation"
+  },
+  {
+    "id": "C015",
+    "title": "Case 15: Yard success east spring hard.",
+    "date": "2026-01-11",
+    "status": "under investigation"
+  },
+  {
+    "id": "C016",
+    "title": "Case 16: Safe focus involve forget over.",
+    "date": "2026-06-17",
+    "status": "open"
+  },
+  {
+    "id": "C017",
+    "title": "Case 17: Baby low seat room.",
+    "date": "2026-06-14",
+    "status": "open"
+  },
+  {
+    "id": "C018",
+    "title": "Case 18: Seek analysis series green official.",
+    "date": "2026-01-04",
+    "status": "closed"
+  },
+  {
+    "id": "C019",
+    "title": "Case 19: President assume this through surface.",
+    "date": "2026-05-05",
+    "status": "under investigation"
+  },
+  {
+    "id": "C020",
+    "title": "Case 20: Present such.",
+    "date": "2026-05-27",
+    "status": "closed"
+  }
+]
