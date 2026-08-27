@@ -12,11 +12,38 @@ AI-Powered Criminal Network Analysis & Intelligence Platform
 ## Team Roles
 | Member | Role | Responsibility |
 |--------|------|-----------------|
-| Member 1 | AI/NLP Lead | Extracts people, places, dates, relationships from case text |
-| Member 2 | Knowledge Graph & Analytics | Graph database + network intelligence (Neo4j) |
-| Member 3 | Computer Vision & Evidence | Crime-scene image / evidence analysis |
-| Member 4 | Backend & Integration | APIs, authentication, connects all modules |
-| Member 5 | Frontend & Visualization | Investigator dashboard + interactive graph |
-| Member 6 | Data, Testing & Product | Synthetic dataset, testing, documentation, demo |
+| Khamrunnisa Anjum | AI/NLP Lead | Extracts people, places, dates, relationships from case text |
+| Aysha Fakarde | Knowledge Graph & Analytics | Graph database + network intelligence (Neo4j) |
+| Amal Khaleefa | Computer Vision & Evidence | Crime-scene image / evidence analysis |
+| Anum | Backend & Integration | APIs, authentication, connects all modules |
+| Aruba | Frontend & Visualization | Investigator dashboard + interactive graph |
+| Ifra Safa | Data, Testing & Product | Synthetic dataset, testing, documentation, demo |
 
 ## Project Structure
+
+AXIOM/
+├── data/              # Synthetic dataset + generator script (Ifra Safa)
+├── frontend/          # Dashboard UI (Aruba)
+
+(More folders will be added as NLP, graph, backend, and CV modules are built.)
+
+## Dataset
+Located in /data. Generated using generate_data.py (Python, requires faker).
+
+Run it with:
+pip install faker
+python generate_data.py
+
+Produces:
+- people.json
+- vehicles.json
+- locations.json
+- cases.json
+- relationships.json
+- case_reports.json
+
+## Tech Stack
+Python, FastAPI, React, Neo4j, PostgreSQL, NLP/Transformers, NetworkX, Cytoscape.js, Docker
+
+## Status
+🚧 In development — dataset complete, modules in progress.
