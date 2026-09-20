@@ -12,10 +12,14 @@ import {
   loadRelationships, saveRelationships,
   loadIntelligence, saveIntelligence,
   loadAISuggestions, saveAISuggestions,
+  loadCaseAnalysisSuggestions, saveCaseAnalysisSuggestions,
+  loadDeniedCaseConnections, saveDeniedCaseConnections,
+  loadAcceptedCaseConnections, saveAcceptedCaseConnections,
   loadTimeline, saveTimeline,
   loadLocations, saveLocations,
   loadEvidence, saveEvidence,
 } from '../utils/storage'
+import { buildCaseAnalysisSuggestions } from '../utils/caseAnalysis'
 import { analyzeCase, simulateAnalysisProgress } from '../services/aiAnalysisService'
 
 const AppContext = createContext(null)
@@ -31,6 +35,9 @@ function buildInitialData() {
       intelligence: loadIntelligence(),
       evidence: loadEvidence(),
       aiSuggestions: loadAISuggestions(),
+      caseAnalysisSuggestions: loadCaseAnalysisSuggestions(),
+      acceptedCaseConnections: loadAcceptedCaseConnections(),
+      deniedCaseConnections: loadDeniedCaseConnections(),
       timeline: loadTimeline(),
       locations: loadLocations(),
     }
@@ -42,6 +49,9 @@ function buildInitialData() {
     intelligence: demo.intelligence,
     evidence: demo.evidence,
     aiSuggestions: demo.aiSuggestions,
+    caseAnalysisSuggestions: [],
+    acceptedCaseConnections: [],
+    deniedCaseConnections: [],
     timeline: demo.timeline,
     locations: demo.locations,
   }
@@ -65,6 +75,9 @@ export function AppProvider({ children }) {
   const [relationships, setRelationships] = useState(initialData.relationships)
   const [intelligence, setIntelligence] = useState(initialData.intelligence)
   const [aiSuggestions, setAISuggestions] = useState(initialData.aiSuggestions)
+  const [caseAnalysisSuggestions, setCaseAnalysisSuggestions] = useState(initialData.caseAnalysisSuggestions)
+  const [acceptedCaseConnections, setAcceptedCaseConnections] = useState(initialData.acceptedCaseConnections)
+  const [deniedCaseConnections, setDeniedCaseConnections] = useState(initialData.deniedCaseConnections)
   const [timeline, setTimeline] = useState(initialData.timeline)
   const [locations, setLocations] = useState(initialData.locations)
   const [evidence, setEvidence] = useState(initialData.evidence)
@@ -103,6 +116,9 @@ export function AppProvider({ children }) {
   useEffect(() => { saveRelationships(relationships) }, [relationships])
   useEffect(() => { saveIntelligence(intelligence) }, [intelligence])
   useEffect(() => { saveAISuggestions(aiSuggestions) }, [aiSuggestions])
+  useEffect(() => { saveCaseAnalysisSuggestions(caseAnalysisSuggestions) }, [caseAnalysisSuggestions])
+  useEffect(() => { saveAcceptedCaseConnections(acceptedCaseConnections) }, [acceptedCaseConnections])
+  useEffect(() => { saveDeniedCaseConnections(deniedCaseConnections) }, [deniedCaseConnections])
   useEffect(() => { saveTimeline(timeline) }, [timeline])
   useEffect(() => { saveLocations(locations) }, [locations])
   useEffect(() => { saveEvidence(evidence) }, [evidence])
@@ -137,6 +153,40 @@ export function AppProvider({ children }) {
     setTimeout(() => { setToasts(prev => prev.filter(t => t.id !== id)) }, 3500)
   }, [])
 
+  const syncWithBackend = useCallback(async (path, method = 'GET', payload = null) => {
+    let token = loadSession()?.token
+    if (!token || token === 'demo-token') {
+      try {
+        const authResp = await fetch('http://localhost:8000/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+        })
+        const authData = await authResp.json()
+        token = authData?.data?.access_token || null
+      } catch (e) {
+        return null
+      }
+    }
+
+    if (!token) return null
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: payload ? JSON.stringify(payload) : undefined,
+      })
+      if (!response.ok) return null
+      return await response.json()
+    } catch (e) {
+      return null
+    }
+  }, [])
+
   const navigate = useCallback((view, options = {}) => {
     setActiveView(view); setSidebarOpen(false); setSearchOpen(false); setProfileOpen(false)
     if (options.filter === 'highRisk') { setCaseHighRiskOnly(true); setCaseFilter('') }
@@ -159,7 +209,7 @@ export function AppProvider({ children }) {
     showToast(`Investigation "${data.name}" created successfully`)
   }, [investigations, navigate, showToast])
 
-  const addCase = useCallback((data) => {
+  const addCase = useCallback(async (data) => {
     const id = data.id || `NX-2026-${String(Math.floor(Math.random() * 900) + 100)}`
     const newCase = {
       id, title: data.title, type: data.type || 'Other', priority: data.priority || 'MEDIUM',
@@ -181,15 +231,29 @@ export function AppProvider({ children }) {
       event: 'Case opened', type: 'CASE_EVENT', createdAt: new Date().toISOString(),
     }
     setTimeline(prev => [tlEntry, ...prev])
+
+    const backendCase = await syncWithBackend('/cases', 'POST', {
+      title: newCase.title,
+      date: newCase.date,
+      status: 'open',
+      priority: String(newCase.priority).toLowerCase(),
+      case_type: newCase.type || 'Criminal Investigation',
+      investigating_officer: newCase.leadInvestigator || 'Officer Inspector',
+    })
+
+    if (backendCase?.data?.id) {
+      setCases(prev => prev.map(c => c.id === newCase.id ? { ...c, backendCaseId: backendCase.data.id } : c))
+    }
+
     return newCase
-  }, [showToast, user])
+  }, [showToast, syncWithBackend, user])
 
   const updateCaseStatus = useCallback((caseId, status) => {
     setCases(prev => prev.map(c => c.id === caseId ? { ...c, status, lastUpdated: new Date().toISOString().slice(0, 10) } : c))
     showToast(`Case status updated to ${status}`)
   }, [showToast])
 
-  const addEntity = useCallback((data) => {
+  const addEntity = useCallback(async (data) => {
     const entity = {
       id: data.id || `ENT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       caseId: data.caseId, type: data.type, name: data.name, risk: data.risk || 'LOW',
@@ -204,8 +268,23 @@ export function AppProvider({ children }) {
     }
     setTimeline(prev => [tlEntry, ...prev])
     showToast(`Entity "${entity.name}" added`)
+
+    const caseRecord = cases.find(c => c.id === data.caseId)
+    const backendCaseId = caseRecord?.backendCaseId || data.caseId
+    if (backendCaseId) {
+      const requestType = String(data.type || 'person').toLowerCase()
+      const backendPayload = {
+        type: requestType,
+        name: data.name,
+        role: data.role || 'associate',
+        age: data.age || null,
+        plate_number: data.plateNumber || data.plate_number || null,
+      }
+      await syncWithBackend(`/cases/${backendCaseId}/entities`, 'POST', backendPayload)
+    }
+
     return entity
-  }, [showToast])
+  }, [cases, showToast, syncWithBackend])
 
   const addRelationship = useCallback((data) => {
     if (data.fromId === data.toId) { showToast('Cannot create self-relationship', 'error'); return null }
@@ -340,6 +419,70 @@ export function AppProvider({ children }) {
     return suggestionsWithCase
   }, [entities, intelligence, locations, showToast])
 
+  const runCaseAnalysis = useCallback(async (caseId) => {
+    const currentCase = cases.find(c => c.id === caseId)
+    if (!currentCase) return []
+
+    const suggestions = buildCaseAnalysisSuggestions(caseId, cases, entities, deniedCaseConnections)
+
+    setCaseAnalysisSuggestions(prev => {
+      const filtered = prev.filter(existing => existing.caseId !== caseId || existing.status !== 'PENDING')
+      return [...filtered, ...suggestions]
+    })
+
+    if (suggestions.length === 0) {
+      showToast('No significant connections found with existing cases.', 'info')
+      return []
+    }
+
+    showToast(`Found ${suggestions.length} potential case connection${suggestions.length === 1 ? '' : 's'}.`)
+    return suggestions
+  }, [cases, deniedCaseConnections, entities, showToast])
+
+  const acceptCaseConnection = useCallback((suggestionId) => {
+    const suggestion = caseAnalysisSuggestions.find(s => s.id === suggestionId)
+    if (!suggestion) return
+
+    setCaseAnalysisSuggestions(prev => prev.filter(s => s.id !== suggestionId))
+    setAcceptedCaseConnections(prev => {
+      const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
+      if (prev.some(item => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)) return prev
+      return [{
+        id: suggestion.id,
+        caseId: suggestion.caseId,
+        targetCaseId: suggestion.targetCaseId,
+        targetCaseTitle: suggestion.targetCaseTitle,
+        connectionType: suggestion.connectionType,
+        commonInfo: suggestion.commonInfo,
+        sharedEntities: suggestion.sharedEntities || [],
+        confidence: suggestion.confidence,
+        reason: suggestion.reason,
+        acceptedAt: new Date().toISOString(),
+      }, ...prev]
+    })
+    showToast(`Connection accepted: ${suggestion.targetCaseTitle}`)
+  }, [caseAnalysisSuggestions, showToast])
+
+  const denyCaseConnection = useCallback((suggestionId) => {
+    const suggestion = caseAnalysisSuggestions.find(s => s.id === suggestionId)
+    if (!suggestion) return
+
+    setCaseAnalysisSuggestions(prev => prev.filter(s => s.id !== suggestionId))
+    setDeniedCaseConnections(prev => {
+      const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
+      if (prev.some(item => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)) return prev
+      return [{
+        caseId: suggestion.caseId,
+        targetCaseId: suggestion.targetCaseId,
+        connectionType: suggestion.connectionType,
+        commonInfo: suggestion.commonInfo,
+        sharedEntities: suggestion.sharedEntities || [],
+        deniedAt: new Date().toISOString(),
+      }, ...prev]
+    })
+    showToast('Suggestion denied', 'info')
+  }, [caseAnalysisSuggestions, showToast])
+
   const acceptSuggestion = useCallback((suggestionId) => {
     setAISuggestions(prev => prev.map(s => s.id === suggestionId ? { ...s, status: 'ACCEPTED' } : s))
     const suggestion = aiSuggestions.find(s => s.id === suggestionId)
@@ -397,7 +540,7 @@ export function AppProvider({ children }) {
     user, isAuthenticated: !!user, page, navigateTo, login, logout,
     activeView, sidebarOpen, sidebarCollapsed, searchOpen, notificationsOpen, profileOpen,
     investigationModalOpen, startInvestigationOnNetwork,
-    cases, entities, relationships, intelligence, evidence, aiSuggestions, timeline, locations, investigations,
+    cases, entities, relationships, intelligence, evidence, aiSuggestions, caseAnalysisSuggestions, acceptedCaseConnections, deniedCaseConnections, timeline, locations, investigations,
     activeInvestigation, activeCaseId, notifications, toasts, settings,
     caseFilter, caseHighRiskOnly, selectedCaseId, selectedSuspectId, selectedEvidenceId,
     networkFocusEntity, selectedNetworkNode,
@@ -414,12 +557,12 @@ export function AppProvider({ children }) {
     setAddEntityModalOpen, setAddRelationshipModalOpen,
     navigate, openStartInvestigation, createInvestigation,
     addCase, updateCaseStatus, addEntity, addRelationship, addIntelligence, addLocation, updateLocation, deleteLocation, addEvidence,
-    runAIAnalysis, acceptSuggestion, rejectSuggestion,
+    runAIAnalysis, runCaseAnalysis, acceptCaseConnection, denyCaseConnection, acceptSuggestion, rejectSuggestion,
     linkEvidence, dismissNotification, markNotificationsRead, updateSettings, showToast,
   }), [
     user, page, navigateTo, login, logout, activeView, sidebarOpen, sidebarCollapsed, searchOpen,
     notificationsOpen, profileOpen, investigationModalOpen, startInvestigationOnNetwork,
-    cases, entities, relationships, intelligence, evidence, aiSuggestions, timeline, locations, investigations,
+    cases, entities, relationships, intelligence, evidence, aiSuggestions, caseAnalysisSuggestions, acceptedCaseConnections, deniedCaseConnections, timeline, locations, investigations,
     activeInvestigation, activeCaseId, notifications, toasts, settings,
     caseFilter, caseHighRiskOnly, selectedCaseId, selectedSuspectId, selectedEvidenceId,
     networkFocusEntity, selectedNetworkNode,
@@ -428,7 +571,7 @@ export function AppProvider({ children }) {
     analyzing, analysisStep,
     unreadCount, navItems, navigate, openStartInvestigation, createInvestigation,
     addCase, updateCaseStatus, addEntity, addRelationship, addIntelligence, addLocation, updateLocation, deleteLocation, addEvidence,
-    runAIAnalysis, acceptSuggestion, rejectSuggestion,
+    runAIAnalysis, runCaseAnalysis, acceptCaseConnection, denyCaseConnection, acceptSuggestion, rejectSuggestion,
     linkEvidence, dismissNotification, markNotificationsRead, updateSettings, showToast,
   ])
 

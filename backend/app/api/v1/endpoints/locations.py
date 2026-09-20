@@ -1,12 +1,27 @@
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Location
-from app.schemas import LocationResponse, ApiResponse, MetaPagination
+from app.schemas import LocationCreate, LocationResponse, ApiResponse, MetaPagination
 from app.core.exceptions import NotFoundException
 
 router = APIRouter()
+
+@router.post("", response_model=ApiResponse[LocationResponse], status_code=status.HTTP_201_CREATED, tags=["Locations"])
+def create_location(location_in: LocationCreate, db: Session = Depends(get_db)):
+    """Create a location entity or reuse the same name if it already exists."""
+    name = (location_in.name or "").strip()
+    existing = db.query(Location).filter(Location.name == name).first()
+    if existing:
+        return ApiResponse(success=True, data=LocationResponse.model_validate(existing))
+
+    location = Location(id=f"L{uuid.uuid4().hex[:6].upper()}", name=name)
+    db.add(location)
+    db.commit()
+    db.refresh(location)
+    return ApiResponse(success=True, data=LocationResponse.model_validate(location))
 
 @router.get("", response_model=ApiResponse[List[LocationResponse]], tags=["Locations"])
 def get_locations(

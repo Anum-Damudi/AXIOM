@@ -1,12 +1,27 @@
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Vehicle
-from app.schemas import VehicleResponse, ApiResponse, MetaPagination
+from app.schemas import VehicleCreate, VehicleResponse, ApiResponse, MetaPagination
 from app.core.exceptions import NotFoundException
 
 router = APIRouter()
+
+@router.post("", response_model=ApiResponse[VehicleResponse], status_code=status.HTTP_201_CREATED, tags=["Vehicles"])
+def create_vehicle(vehicle_in: VehicleCreate, db: Session = Depends(get_db)):
+    """Create a vehicle entity or reuse the same plate number if it already exists."""
+    plate = (vehicle_in.plate_number or "").strip().upper()
+    existing = db.query(Vehicle).filter(Vehicle.plate_number == plate).first()
+    if existing:
+        return ApiResponse(success=True, data=VehicleResponse.model_validate(existing))
+
+    vehicle = Vehicle(id=f"V{uuid.uuid4().hex[:6].upper()}", plate_number=plate, type=vehicle_in.type or "car")
+    db.add(vehicle)
+    db.commit()
+    db.refresh(vehicle)
+    return ApiResponse(success=True, data=VehicleResponse.model_validate(vehicle))
 
 @router.get("", response_model=ApiResponse[List[VehicleResponse]], tags=["Vehicles"])
 def get_vehicles(

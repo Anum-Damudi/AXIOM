@@ -2,7 +2,10 @@ from app.schemas.common import ApiResponse, ApiErrorResponse, MetaPagination
 from app.schemas.auth import UserRegister, UserLogin, UserResponse, TokenResponse
 from app.schemas.case import CaseCreate, CaseUpdate, CaseResponse, RelatedCaseConnection
 from app.schemas.report import ReportCreate, ReportResponse, ExtractedNlpResult
-from app.schemas.entity import PersonResponse, VehicleResponse, LocationResponse, PersonConnectionsResponse
+from app.schemas.entity import (
+    PersonCreate, VehicleCreate, LocationCreate, CaseEntityLinkCreate,
+    PersonResponse, VehicleResponse, LocationResponse, PersonConnectionsResponse
+)
 from app.schemas.evidence import EvidenceResponse, CvAnalysisResult
 from app.schemas.graph import CytoscapeGraphData, GraphNode, GraphEdge
 from app.schemas.analytics import NetworkMetricResult, CommunityClusterResult, HiddenLinkResult
@@ -25,6 +28,10 @@ __all__ = [
     "ReportCreate",
     "ReportResponse",
     "ExtractedNlpResult",
+    "PersonCreate",
+    "VehicleCreate",
+    "LocationCreate",
+    "CaseEntityLinkCreate",
     "PersonResponse",
     "VehicleResponse",
     "LocationResponse",

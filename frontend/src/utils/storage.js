@@ -151,6 +151,9 @@ export function saveRelationships(relationships) {
 
 const INTELLIGENCE_KEY = 'nexus_intelligence'
 const AI_SUGGESTIONS_KEY = 'nexus_ai_suggestions'
+const CASE_ANALYSIS_KEY = 'nexus_case_analysis_suggestions'
+const CASE_ANALYSIS_DENIED_KEY = 'nexus_case_analysis_denied'
+const ACCEPTED_CASE_CONNECTIONS_KEY = 'nexus_accepted_case_connections'
 const TIMELINE_KEY = 'nexus_timeline'
 
 export function loadIntelligence() {
@@ -173,6 +176,39 @@ export function loadAISuggestions() {
 
 export function saveAISuggestions(suggestions) {
   localStorage.setItem(AI_SUGGESTIONS_KEY, JSON.stringify(suggestions))
+}
+
+export function loadCaseAnalysisSuggestions() {
+  try {
+    const raw = localStorage.getItem(CASE_ANALYSIS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveCaseAnalysisSuggestions(suggestions) {
+  localStorage.setItem(CASE_ANALYSIS_KEY, JSON.stringify(suggestions))
+}
+
+export function loadDeniedCaseConnections() {
+  try {
+    const raw = localStorage.getItem(CASE_ANALYSIS_DENIED_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveDeniedCaseConnections(denials) {
+  localStorage.setItem(CASE_ANALYSIS_DENIED_KEY, JSON.stringify(denials))
+}
+
+export function loadAcceptedCaseConnections() {
+  try {
+    const raw = localStorage.getItem(ACCEPTED_CASE_CONNECTIONS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveAcceptedCaseConnections(accepted) {
+  localStorage.setItem(ACCEPTED_CASE_CONNECTIONS_KEY, JSON.stringify(accepted))
 }
 
 export function loadTimeline() {

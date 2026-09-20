@@ -1,12 +1,32 @@
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Person, Relationship, Case
-from app.schemas import PersonResponse, PersonConnectionsResponse, ApiResponse, MetaPagination
+from app.schemas import PersonCreate, PersonResponse, PersonConnectionsResponse, ApiResponse, MetaPagination
 from app.core.exceptions import NotFoundException
 
 router = APIRouter()
+
+@router.post("", response_model=ApiResponse[PersonResponse], status_code=status.HTTP_201_CREATED, tags=["People"])
+def create_person(person_in: PersonCreate, db: Session = Depends(get_db)):
+    """Create a person entity or reuse the same name if it already exists."""
+    existing = db.query(Person).filter(Person.name == person_in.name).first()
+    if existing:
+        return ApiResponse(success=True, data=PersonResponse.model_validate(existing))
+
+    person = Person(
+        id=f"P{uuid.uuid4().hex[:6].upper()}",
+        name=person_in.name,
+        role=person_in.role or "associate",
+        age=person_in.age,
+        normalized_name=person_in.name.lower()
+    )
+    db.add(person)
+    db.commit()
+    db.refresh(person)
+    return ApiResponse(success=True, data=PersonResponse.model_validate(person))
 
 @router.get("", response_model=ApiResponse[List[PersonResponse]], tags=["People"])
 def get_people(

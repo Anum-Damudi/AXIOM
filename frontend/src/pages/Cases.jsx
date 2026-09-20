@@ -10,6 +10,8 @@ export default function Cases() {
     cases, selectedCaseId, setSelectedCaseId, caseFilter, setCaseFilter,
     caseHighRiskOnly, setCaseHighRiskOnly, newCaseModalOpen, setNewCaseModalOpen,
     addCase, updateCaseStatus, entities, relationships, navigate,
+    runCaseAnalysis, caseAnalysisSuggestions, acceptCaseConnection, denyCaseConnection,
+    acceptedCaseConnections,
   } = useApp()
 
   const [sortBy, setSortBy] = useState('lastUpdated')
@@ -34,6 +36,14 @@ export default function Cases() {
   const selectedCase = cases.find(c => c.id === selectedCaseId)
   const caseEnts = useMemo(() => selectedCase ? entities.filter(e => e.caseId === selectedCase.id) : [], [entities, selectedCase])
   const caseRels = useMemo(() => selectedCase ? relationships.filter(r => r.caseId === selectedCase.id) : [], [relationships, selectedCase])
+  const pendingCaseConnections = useMemo(() =>
+    selectedCase ? caseAnalysisSuggestions.filter(s => s.caseId === selectedCase.id && s.status === 'PENDING') : [],
+    [caseAnalysisSuggestions, selectedCase]
+  )
+  const acceptedConnections = useMemo(() =>
+    selectedCase ? acceptedCaseConnections.filter(c => c.caseId === selectedCase.id) : [],
+    [acceptedCaseConnections, selectedCase]
+  )
 
   const statusOptions = ['Open', 'Under Investigation', 'On Hold', 'Closed']
 
@@ -152,6 +162,73 @@ export default function Cases() {
               <select value={selectedCase.status} onChange={e => updateCaseStatus(selectedCase.id, e.target.value)} className="toolbar__select" style={{ width: '100%' }}>
                 {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
+            </section>
+
+            <section className="case-detail__section">
+              <h4>AI Case Analysis</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <button type="button" className="btn btn--primary btn--sm" onClick={() => runCaseAnalysis(selectedCase.id)}>
+                  Analyze against other cases
+                </button>
+              </div>
+
+              {pendingCaseConnections.length > 0 ? (
+                <div className="case-list">
+                  {pendingCaseConnections.map(item => {
+                    const sharedSummary = Array.isArray(item.sharedEntities) && item.sharedEntities.length > 0
+                      ? item.sharedEntities.map(group => `${group.type}: ${group.values.join('; ')}`).join(' | ')
+                      : item.commonInfo
+
+                    return (
+                      <div key={item.id} className="case-list__item" style={{ display: 'block' }}>
+                        <div className="case-list__main">
+                          <span className="case-list__name">Potential connection: Case {item.targetCaseId}</span>
+                          <span className="case-list__meta">{item.targetCaseTitle}</span>
+                        </div>
+                        <div style={{ marginTop: '8px', display: 'grid', gap: '6px' }}>
+                          <div><strong>Why suggested:</strong> {item.reason}</div>
+                          <div><strong>Shared evidence:</strong> {sharedSummary}</div>
+                          <div><strong>Confidence:</strong> {item.confidence}%</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                          <button type="button" className="btn btn--primary btn--sm" onClick={() => acceptCaseConnection(item.id)}>Accept</button>
+                          <button type="button" className="btn btn--ghost btn--sm" onClick={() => denyCaseConnection(item.id)}>Deny</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted">No significant connections found with existing cases.</p>
+              )}
+            </section>
+
+            <section className="case-detail__section">
+              <h4>Accepted Case Connections</h4>
+              {acceptedConnections.length > 0 ? (
+                <div className="case-list">
+                  {acceptedConnections.map(item => {
+                    const sharedSummary = Array.isArray(item.sharedEntities) && item.sharedEntities.length > 0
+                      ? item.sharedEntities.map(group => `${group.type}: ${group.values.join('; ')}`).join(' | ')
+                      : item.commonInfo
+
+                    return (
+                      <div key={item.id || `${item.caseId}-${item.targetCaseId}`} className="case-list__item" style={{ display: 'block' }}>
+                        <div className="case-list__main">
+                          <span className="case-list__name">{item.targetCaseTitle}</span>
+                          <span className="case-list__meta">{item.connectionType.replace(/_/g, ' ')}</span>
+                        </div>
+                        <div style={{ marginTop: '8px' }}>
+                          <div><strong>Shared evidence:</strong> {sharedSummary}</div>
+                          <div><strong>Reason:</strong> {item.reason}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted">No accepted case connections yet.</p>
+              )}
             </section>
 
             <div className="case-detail__actions">

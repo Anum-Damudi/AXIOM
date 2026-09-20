@@ -12,6 +12,19 @@ logger = logging.getLogger("axiom.nlp")
 
 class NlpService:
     @staticmethod
+    def _is_valid_location_name(name: str) -> bool:
+        if not name or not isinstance(name, str):
+            return False
+        stripped = name.strip()
+        if not stripped:
+            return False
+        # Reject partial camel-case fragments like "UniqueCity" or "UniqueVillage"
+        # by requiring the entire value to be made of standalone capitalized words.
+        if re.search(r'[A-Z][a-z]+[A-Z]', stripped):
+            return False
+        return bool(re.fullmatch(r'(?:[A-Z][a-z]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-z]+|[A-Z]{2,}))*', stripped))
+
+    @staticmethod
     def process_case_report(db: Session, report_id: str) -> CaseReport:
         report = db.query(CaseReport).filter(CaseReport.id == report_id).first()
         if not report:
@@ -63,27 +76,43 @@ class NlpService:
         dates = []
         relationships = []
 
-        # Vehicle extraction regex (e.g. KA-56-ED-1949)
         veh_matches = re.findall(r'[A-Z]{2}-\d{2}-[A-Z]{2}-\d{4}', text)
         for plate in set(veh_matches):
             vehicles.append({"plate_number": plate, "type": "car"})
 
-        # Date extraction regex (e.g. 2026-03-20)
         date_matches = re.findall(r'\b\d{4}-\d{2}-\d{2}\b', text)
         dates.extend(list(set(date_matches)))
         rel_date = dates[0] if dates else "2026-01-01"
 
-        # Pattern: "Name1 met Name2 near Location on Date using vehicle Plate"
-        met_pattern = re.search(r'([A-Z][a-z]+ [A-Z][a-z]+)\s+met\s+([A-Z][a-z]+ [A-Z][a-z]+)(?:\s+near\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?))?', text)
+        met_pattern = re.search(
+            r'(?<![A-Za-z0-9])([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+met\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)'
+            r'(?:\s+(?:near|in|at|around)\s+(?<![A-Za-z0-9])((?:[A-Z][a-z]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-z]+|[A-Z]{2,}))*)(?![A-Za-z0-9]))?',
+            text,
+        )
         if met_pattern:
             p1_name = met_pattern.group(1).strip()
             p2_name = met_pattern.group(2).strip()
             loc_name = met_pattern.group(3).strip() if met_pattern.group(3) else None
 
-            people.append({"name": p1_name, "role": "suspect"})
-            people.append({"name": p2_name, "role": "associate"})
+            if p1_name.lower() == p2_name.lower():
+                people.append({"name": p1_name, "role": "suspect"})
+            else:
+                people.append({"name": p1_name, "role": "suspect"})
+                people.append({"name": p2_name, "role": "associate"})
 
-            if loc_name:
+                relationships.append({
+                    "source": p1_name,
+                    "relationship": "MET",
+                    "target": p2_name,
+                    "confidence": 0.95,
+                    "date": rel_date
+                })
+
+            if (
+                loc_name
+                and NlpService._is_valid_location_name(loc_name)
+                and loc_name.lower() not in {p1_name.lower(), p2_name.lower()}
+            ):
                 locations.append({"name": loc_name})
                 relationships.append({
                     "source": p1_name,
@@ -92,14 +121,6 @@ class NlpService:
                     "confidence": 0.92,
                     "date": rel_date
                 })
-
-            relationships.append({
-                "source": p1_name,
-                "relationship": "MET",
-                "target": p2_name,
-                "confidence": 0.95,
-                "date": rel_date
-            })
 
             if veh_matches:
                 relationships.append({
@@ -238,12 +259,15 @@ class NlpService:
         for r in payload["relationships"]:
             src_id = name_to_id.get(r["source"], r["source"])
             tgt_id = name_to_id.get(r["target"], r["target"])
+            if src_id == tgt_id:
+                continue
             rel_id = f"R{uuid.uuid4().hex[:6].upper()}"
 
             existing_rel = db.query(Relationship).filter(
                 Relationship.source == src_id,
                 Relationship.target == tgt_id,
-                Relationship.type == r["relationship"]
+                Relationship.type == r["relationship"],
+                Relationship.case_id == case_id
             ).first()
 
             if not existing_rel:
