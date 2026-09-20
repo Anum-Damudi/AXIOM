@@ -2,6 +2,9 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
+import GoogleMapView from '../components/GoogleMapView'
+import GoogleMapsKeyModal from '../components/GoogleMapsKeyModal'
+import { getStoredGoogleMapsApiKey } from '../utils/googleMapsLoader'
 
 const LOCATION_TYPES = [
   'Crime Scene', 'Residence', 'Office', 'Warehouse',
@@ -100,8 +103,12 @@ export default function MapView() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 })
   const [mapZoom, setMapZoom] = useState(1)
+  const [viewEngine, setViewEngine] = useState(() => (getStoredGoogleMapsApiKey() ? 'google' : 'google'))
+  const [keyModalOpen, setKeyModalOpen] = useState(false)
   const canvasRef = useRef(null)
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, moved: false })
+  const addressInputRef = useRef(null)
+  const autocompleteRef = useRef(null)
 
   const activeCaseId = mapFilterCase || selectedCaseId || ''
 
@@ -222,6 +229,46 @@ export default function MapView() {
     showToast('Map selection cancelled', 'info')
   }, [showToast])
 
+  // Initialize Google Places Autocomplete on the address input when form opens
+  useEffect(() => {
+    if (showForm && addressInputRef.current && window.google?.maps?.places?.Autocomplete) {
+      try {
+        const ac = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+          fields: ['formatted_address', 'geometry', 'name'],
+        })
+        const listener = ac.addListener('place_changed', () => {
+          const place = ac.getPlace()
+          if (place.geometry && place.geometry.location) {
+            const lat = place.geometry.location.lat()
+            const lng = place.geometry.location.lng()
+            setFormData(prev => ({
+              ...prev,
+              name: prev.name && prev.name.trim() ? prev.name : (place.name || ''),
+              address: place.formatted_address || place.name || prev.address,
+              latitude: lat.toFixed(6),
+              longitude: lng.toFixed(6),
+            }))
+            setFormErrors(prev => {
+              const next = { ...prev }
+              delete next.latitude
+              delete next.longitude
+              return next
+            })
+            showToast('Place and coordinates loaded from Google Places', 'success')
+          }
+        })
+        autocompleteRef.current = ac
+        return () => {
+          if (listener && window.google?.maps?.event) {
+            window.google.maps.event.removeListener(listener)
+          }
+        }
+      } catch (e) {
+        console.warn('Autocomplete init error:', e)
+      }
+    }
+  }, [showForm, showToast])
+
   const handleCloseForm = useCallback(() => {
     if (selectingOnMap) {
       handleCancelMapSelect()
@@ -314,6 +361,27 @@ export default function MapView() {
       setSelectedLoc(null)
     }
   }, [selectingOnMap, mappedLocations, pannedBounds])
+
+  const handleGoogleMapClick = useCallback((lat, lng, address) => {
+    if (selectingOnMap) {
+      setPreviewCoords({ lat, lng })
+      setFormData(prev => ({
+        ...prev,
+        latitude: lat.toFixed(6),
+        longitude: lng.toFixed(6),
+        address: address || prev.address,
+      }))
+      setFormErrors(prev => {
+        const next = { ...prev }
+        delete next.latitude
+        delete next.longitude
+        return next
+      })
+      if (address) {
+        showToast(`Selected location: ${address.slice(0, 45)}...`, 'info')
+      }
+    }
+  }, [selectingOnMap, showToast])
 
   const handleConfirmMapSelection = useCallback(() => {
     if (!previewCoords) return
@@ -412,7 +480,37 @@ export default function MapView() {
             {activeCaseId && ` — ${cases.find(c => c.id === activeCaseId)?.title || ''}`}
           </p>
         </div>
-        <div className="page-header__actions">
+        <div className="page-header__actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="map-engine-switch" style={{ display: 'flex', background: 'var(--bg-card)', padding: 2, borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+            <button
+              type="button"
+              className={`btn btn--xs ${viewEngine === 'google' ? 'btn--primary' : 'btn--ghost'}`}
+              onClick={() => setViewEngine('google')}
+              title="Live Google Maps layer"
+              style={{ borderRadius: 4 }}
+            >
+              <Icon name="globe" className="icon-xs" /> Google Maps
+            </button>
+            <button
+              type="button"
+              className={`btn btn--xs ${viewEngine === 'grid' ? 'btn--primary' : 'btn--ghost'}`}
+              onClick={() => setViewEngine('grid')}
+              title="Tactical Grid Simulation"
+              style={{ borderRadius: 4 }}
+            >
+              <Icon name="map" className="icon-xs" /> Tactical Grid
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => setKeyModalOpen(true)}
+            title="Configure Google Maps API Key"
+          >
+            <Icon name="settings" className="icon-xs" /> Maps Key
+          </button>
+
           <button className="btn btn--primary btn--sm" onClick={handleOpenAdd}>
             <Icon name="plus" className="icon-xs" /> Add Location
           </button>
@@ -563,80 +661,94 @@ export default function MapView() {
           </div>
         </aside>
 
-        <div
-          className={`map-canvas panel ${selectingOnMap ? 'map-canvas--selecting' : ''}`}
-          ref={canvasRef}
-          onClick={handleMapClick}
-          onMouseDown={handleCanvasMouseDown}
-          onMouseMove={handleCanvasMouseMove}
-          onMouseUp={handleCanvasMouseUp}
-          onMouseLeave={handleCanvasMouseUp}
-          onWheel={handleWheel}
-        >
-          <div className="map-canvas__view">
-            <div className="map-canvas__grid" aria-hidden="true" />
+        {viewEngine === 'google' ? (
+          <GoogleMapView
+            locations={filteredLocations}
+            selectedLoc={selectedLoc}
+            onSelectLoc={setSelectedLoc}
+            selectingOnMap={selectingOnMap}
+            onMapClick={handleGoogleMapClick}
+            previewCoords={previewCoords}
+            activeCaseId={activeCaseId}
+            onOpenKeyModal={() => setKeyModalOpen(true)}
+            onSwitchToGrid={() => setViewEngine('grid')}
+          />
+        ) : (
+          <div
+            className={`map-canvas panel ${selectingOnMap ? 'map-canvas--selecting' : ''}`}
+            ref={canvasRef}
+            onClick={handleMapClick}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseUp}
+            onWheel={handleWheel}
+          >
+            <div className="map-canvas__view">
+              <div className="map-canvas__grid" aria-hidden="true" />
 
-            <div className="map-canvas__legend">
-              {LOCATION_TYPES.slice(0, 6).map(t => (
-                <span key={t} className="map-canvas__legend-item">
-                  <span className="map-canvas__legend-dot" style={{ background: TYPE_COLORS[t] }} />{t}
-                </span>
-              ))}
-            </div>
+              <div className="map-canvas__legend">
+                {LOCATION_TYPES.slice(0, 6).map(t => (
+                  <span key={t} className="map-canvas__legend-item">
+                    <span className="map-canvas__legend-dot" style={{ background: TYPE_COLORS[t] }} />{t}
+                  </span>
+                ))}
+              </div>
 
-            {mappedLocations.length === 0 && !selectingOnMap && (
-              <div className="map-empty-overlay">
-                <Icon name="map" className="icon-lg" />
-                <p>
-                  {activeCaseId
-                    ? 'No intelligence locations have been added for this case.'
-                    : 'No location data available.'
-                  }
-                </p>
-                {activeCaseId && (
-                  <button className="btn btn--primary btn--sm" onClick={handleOpenAdd}>
-                    <Icon name="plus" className="icon-xs" /> Add Location
+              {mappedLocations.length === 0 && !selectingOnMap && (
+                <div className="map-empty-overlay">
+                  <Icon name="map" className="icon-lg" />
+                  <p>
+                    {activeCaseId
+                      ? 'No intelligence locations have been added for this case.'
+                      : 'No location data available.'
+                    }
+                  </p>
+                  {activeCaseId && (
+                    <button className="btn btn--primary btn--sm" onClick={handleOpenAdd}>
+                      <Icon name="plus" className="icon-xs" /> Add Location
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {mappedLocations.map(loc => {
+                const lType = getLocType(loc)
+                const color = TYPE_COLORS[lType] || TYPE_COLORS['Other']
+                const isSelected = selectedLoc?.id === loc.id
+                return (
+                  <button
+                    key={loc.id}
+                    className={`map-marker ${isSelected ? 'map-marker--selected' : ''}`}
+                    style={{ left: `${loc.x}%`, top: `${loc.y}%` }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedLoc(loc) }}
+                    aria-label={loc.name}
+                  >
+                    <span className="map-marker__dot" style={{ background: color }} />
+                    <span className="map-marker__pulse" style={{ background: color }} aria-hidden="true" />
+                    <span className="map-marker__label">{loc.name}</span>
                   </button>
-                )}
-              </div>
-            )}
+                )
+              })}
 
-            {mappedLocations.map(loc => {
-              const lType = getLocType(loc)
-              const color = TYPE_COLORS[lType] || TYPE_COLORS['Other']
-              const isSelected = selectedLoc?.id === loc.id
-              return (
-                <button
-                  key={loc.id}
-                  className={`map-marker ${isSelected ? 'map-marker--selected' : ''}`}
-                  style={{ left: `${loc.x}%`, top: `${loc.y}%` }}
-                  onClick={(e) => { e.stopPropagation(); setSelectedLoc(loc) }}
-                  aria-label={loc.name}
+              {previewCoords && (
+                <div
+                  className="map-preview-marker"
+                  style={{
+                    left: `${latLngToPercent(previewCoords.lat, previewCoords.lng, pannedBounds).x}%`,
+                    top: `${latLngToPercent(previewCoords.lat, previewCoords.lng, pannedBounds).y}%`,
+                  }}
                 >
-                  <span className="map-marker__dot" style={{ background: color }} />
-                  <span className="map-marker__pulse" style={{ background: color }} aria-hidden="true" />
-                  <span className="map-marker__label">{loc.name}</span>
-                </button>
-              )
-            })}
-
-            {previewCoords && (
-              <div
-                className="map-preview-marker"
-                style={{
-                  left: `${latLngToPercent(previewCoords.lat, previewCoords.lng, pannedBounds).x}%`,
-                  top: `${latLngToPercent(previewCoords.lat, previewCoords.lng, pannedBounds).y}%`,
-                }}
-              >
-                <span className="map-preview-marker__dot" />
-                <span className="map-preview-marker__pulse" />
-                <span className="map-preview-marker__label">
-                  {previewCoords.lat.toFixed(4)}, {previewCoords.lng.toFixed(4)}
-                </span>
-              </div>
-            )}
+                  <span className="map-preview-marker__dot" />
+                  <span className="map-preview-marker__pulse" />
+                  <span className="map-preview-marker__label">
+                    {previewCoords.lat.toFixed(4)}, {previewCoords.lng.toFixed(4)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <aside className={`map-info panel ${selectedLoc ? 'map-info--open' : ''}`}>
           {selectedLoc ? (
@@ -845,15 +957,16 @@ export default function MapView() {
           </div>
 
           <div className="loc-form__group">
-            <label className="loc-form__label">Address / Location Description</label>
+            <label className="loc-form__label">Address / Location Description (Google Places Search)</label>
             <input
+              ref={addressInputRef}
               className="loc-form__input"
               type="text"
-              placeholder="Enter address or leave blank for coordinates only"
+              placeholder="Search place with Google Places or enter custom address..."
               value={formData.address}
               onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
             />
-            <span className="loc-form__hint">Address not available — coordinates provided</span>
+            <span className="loc-form__hint">Search places via Google Places Autocomplete or click 'Select on Map' below</span>
           </div>
 
           <button
@@ -949,6 +1062,15 @@ export default function MapView() {
           )
         })()}
       </Modal>
+
+      <GoogleMapsKeyModal
+        open={keyModalOpen}
+        onClose={() => setKeyModalOpen(false)}
+        onKeySaved={() => {
+          setViewEngine('google')
+        }}
+        onFallbackSelected={() => setViewEngine('grid')}
+      />
     </div>
   )
 }
