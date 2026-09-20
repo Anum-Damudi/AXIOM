@@ -1,6 +1,25 @@
 from typing import Optional, List
 from pydantic import BaseModel
 
+class PersonCreate(BaseModel):
+    name: str
+    role: Optional[str] = "associate"
+    age: Optional[int] = None
+
+class VehicleCreate(BaseModel):
+    plate_number: str
+    type: Optional[str] = "car"
+
+class LocationCreate(BaseModel):
+    name: str
+
+class CaseEntityLinkCreate(BaseModel):
+    type: str
+    name: Optional[str] = None
+    plate_number: Optional[str] = None
+    role: Optional[str] = "associate"
+    age: Optional[int] = None
+
 class PersonResponse(BaseModel):
     id: str
     name: str

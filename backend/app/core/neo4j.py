@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Optional, Dict, Any, List
 from neo4j import GraphDatabase, Driver
 from app.core.config import settings
@@ -9,15 +10,25 @@ class Neo4jService:
     def __init__(self):
         self.driver: Optional[Driver] = None
         self._is_connected: bool = False
+        self._last_connect_attempt: Optional[float] = None
+        self._retry_interval_seconds = 30.0
 
     def connect(self):
+        if self._is_connected and self.driver:
+            return
+
+        now = time.monotonic()
+        if self._last_connect_attempt is not None and (now - self._last_connect_attempt) < self._retry_interval_seconds:
+            logger.debug("Skipping Neo4j reconnect attempt while offline to avoid retry churn.")
+            return
+
+        self._last_connect_attempt = now
         if not self.driver:
             try:
                 self.driver = GraphDatabase.driver(
                     settings.NEO4J_URI,
                     auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
                 )
-                # Verify connectivity
                 self.driver.verify_connectivity()
                 self._is_connected = True
                 logger.info("Successfully connected to Neo4j database.")
