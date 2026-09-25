@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from app.models import Case, CaseReport, Person, Vehicle, Location, Evidence
+from app.models import Case, CaseReport, Person, Vehicle, Location, Evidence, PhoneNumber
 from app.schemas.search import UnifiedSearchResponse, SearchCategorizedResults
 
 class SearchService:
@@ -46,7 +46,13 @@ class SearchService:
         ).limit(20).all()
         evidence_results = [{"id": e.id, "case_id": e.case_id, "title": e.title, "file_name": e.file_name} for e in evidence]
 
-        total = len(case_results) + len(people_results) + len(vehicle_results) + len(location_results) + len(evidence_results)
+        # Search Phone Numbers
+        phones = db.query(PhoneNumber).filter(
+            (PhoneNumber.id.ilike(pattern)) | (PhoneNumber.number.ilike(pattern)) | (PhoneNumber.normalized.ilike(pattern))
+        ).limit(20).all()
+        phone_results = [{"id": p.id, "number": p.number, "normalized": p.normalized, "is_active": p.is_active} for p in phones]
+
+        total = len(case_results) + len(people_results) + len(vehicle_results) + len(location_results) + len(evidence_results) + len(phone_results)
 
         return UnifiedSearchResponse(
             query=query_str,
@@ -56,6 +62,7 @@ class SearchService:
                 people=people_results,
                 vehicles=vehicle_results,
                 locations=location_results,
-                evidence=evidence_results
+                evidence=evidence_results,
+                phones=phone_results
             )
         )

@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, cases, reports, people, vehicles, locations,
-    evidence, search, graph, analytics, timeline, dashboard, health
+    evidence, search, graph, analytics, timeline, dashboard, health, ledger, phones,
+    users, audit
 )
 
 api_router = APIRouter()
@@ -19,3 +20,10 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytic
 api_router.include_router(timeline.router, prefix="", tags=["Timeline"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(health.router, prefix="/health", tags=["Health"])
+api_router.include_router(ledger.router, prefix="/ledger", tags=["Ledger"])
+# Phones router defines its own full paths (no extra prefix to avoid /phones/phones duplication):
+#   /cases/{case_id}/cdr/import, /cases/{case_id}/phone-intelligence,
+#   /phones/{number}/profile|movement|network|graph|burner-detection, /phones/colocation, ...
+api_router.include_router(phones.router, prefix="", tags=["Phones"])
+api_router.include_router(users.router, prefix="", tags=["User Management"])
+api_router.include_router(audit.router, prefix="/audit-logs", tags=["Audit"])

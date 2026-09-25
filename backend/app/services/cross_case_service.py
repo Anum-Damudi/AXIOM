@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from app.models import Case, Relationship, Person, Vehicle, Location
+from app.models import Case, Relationship, Person, Vehicle, Location, PhoneNumber, PersonPhone
 from app.schemas.case import RelatedCaseConnection
 
 logger = logging.getLogger("axiom.cross_case")
@@ -99,4 +99,8 @@ class CrossCaseService:
             loc = db.query(Location).filter(Location.id == entity_id).first()
             name = loc.name if loc else entity_id
             return name, "shared_location"
+        elif entity_id.startswith("PN"):
+            phone = db.query(PhoneNumber).filter(PhoneNumber.id == entity_id).first()
+            number = phone.number if phone else entity_id
+            return number, "shared_phone"
         return entity_id, "shared_entity"

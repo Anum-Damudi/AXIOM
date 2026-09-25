@@ -88,6 +88,42 @@ class CaseService:
         AuditService.log_action(db, action="DELETE_CASE", user_id=user_id, resource_type="case", resource_id=case_id)
 
     @staticmethod
+    def close_case(db: Session, case_id: str, user_id: str = None) -> CaseResponse:
+        case = db.query(Case).filter(Case.id == case_id).first()
+        if not case:
+            raise NotFoundException(message=f"Case {case_id} not found", code="CASE_NOT_FOUND")
+        if case.status == "closed":
+            raise ConflictException(message=f"Case {case_id} is already closed", code="CASE_ALREADY_CLOSED")
+
+        case.status = "closed"
+        db.commit()
+        db.refresh(case)
+
+        AuditService.log_action(
+            db, action="CLOSE_CASE", user_id=user_id, resource_type="case", resource_id=case_id,
+            details={"title": case.title}
+        )
+        return CaseResponse.model_validate(case)
+
+    @staticmethod
+    def reopen_case(db: Session, case_id: str, user_id: str = None) -> CaseResponse:
+        case = db.query(Case).filter(Case.id == case_id).first()
+        if not case:
+            raise NotFoundException(message=f"Case {case_id} not found", code="CASE_NOT_FOUND")
+        if case.status != "closed":
+            raise ConflictException(message=f"Case {case_id} is not closed", code="CASE_NOT_CLOSED")
+
+        case.status = "open"
+        db.commit()
+        db.refresh(case)
+
+        AuditService.log_action(
+            db, action="REOPEN_CASE", user_id=user_id, resource_type="case", resource_id=case_id,
+            details={"title": case.title}
+        )
+        return CaseResponse.model_validate(case)
+
+    @staticmethod
     def get_case_timeline(db: Session, case_id: str) -> CaseTimelineResponse:
         case = db.query(Case).filter(Case.id == case_id).first()
         if not case:

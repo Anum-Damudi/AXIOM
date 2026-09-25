@@ -27,6 +27,7 @@ class PersonResponse(BaseModel):
     role: str
     normalized_name: Optional[str] = None
     aliases: Optional[str] = None
+    photo_path: Optional[str] = None
 
     class Config:
         from_attributes = True

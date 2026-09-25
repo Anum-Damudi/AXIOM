@@ -1,6 +1,6 @@
-def test_report_pipeline(client):
+def test_report_pipeline(client, auth_headers):
     report_text = "Sandra Perkins met David Ward near Keithmouth on 2026-08-20 using vehicle KA-28-EC-5040."
-    resp = client.post("/api/v1/cases/C001/reports", json={"report_text": report_text})
+    resp = client.post("/api/v1/cases/C001/reports", json={"report_text": report_text}, headers=auth_headers)
     assert resp.status_code == 201
     data = resp.json()["data"]
     assert data["processing_status"] == "COMPLETED"

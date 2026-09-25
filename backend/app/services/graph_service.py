@@ -1,12 +1,16 @@
 import logging
+import re
 import networkx as nx
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from app.core.neo4j import neo4j_client
-from app.models import Person, Vehicle, Location, Case, Relationship
+from app.models import Person, Vehicle, Location, Case, Relationship, PhoneNumber
 from app.schemas.graph import CytoscapeGraphData, GraphNode, GraphEdge
 
 logger = logging.getLogger("axiom.graph")
+
+# Only safe characters are allowed inside a Cypher relationship-type literal.
+_REL_SAFE = re.compile(r"^[A-Z0-9_]+$")
 
 class GraphService:
     @staticmethod
@@ -91,6 +95,8 @@ class GraphService:
             nodes.append(GraphNode(id=l.id, label="Location", name=l.name, type="location", metadata={"lat": l.lat, "lng": l.lng}))
         for c in all_cases:
             nodes.append(GraphNode(id=c.id, label="Case", name=c.title, type="case", metadata={"status": c.status, "date": c.date}))
+        for pn in db.query(PhoneNumber).all():
+            nodes.append(GraphNode(id=pn.id, label="Phone", name=pn.number or pn.normalized, type="phone", metadata={"is_active": pn.is_active}))
 
         edges = []
         for r in all_relationships:
@@ -108,7 +114,11 @@ class GraphService:
     def _build_subgraph_for_nodes(db: Session, node_ids: set, relationships: List[Relationship]) -> CytoscapeGraphData:
         nodes = []
         for nid in node_ids:
-            if nid.startswith("P"):
+            if nid.startswith("PN"):
+                pn = db.query(PhoneNumber).filter(PhoneNumber.id == nid).first()
+                if pn:
+                    nodes.append(GraphNode(id=pn.id, label="Phone", name=pn.number or pn.normalized, type="phone", metadata={"is_active": pn.is_active}))
+            elif nid.startswith("P"):
                 p = db.query(Person).filter(Person.id == nid).first()
                 if p:
                     nodes.append(GraphNode(id=p.id, label="Person", name=p.name, type="person", metadata={"role": p.role}))
@@ -142,10 +152,19 @@ class GraphService:
         neo4j_client.connect()
         if not neo4j_client._is_connected:
             return
+
+        # Sanitize relationship type: only [A-Z0-9_] is allowed inside Cypher labels.
+        safe_rel_type = re.sub(r"[^A-Z0-9_]+", "_", (rel_type or "RELATED").upper()).strip("_")
+        if not safe_rel_type:
+            safe_rel_type = "RELATED"
+        if not _REL_SAFE.match(safe_rel_type):
+            logger.warning(f"Rejected unsafe relationship type {rel_type!r} for graph sync.")
+            return
+
         query = f"""
         MERGE (s {{id: $source}})
         MERGE (t {{id: $target}})
-        MERGE (s)-[r:{rel_type.upper().replace(' ', '_')}]->(t)
+        MERGE (s)-[r:{safe_rel_type}]->(t)
         SET r.id = $rel_id, r.date = $date
         """
         params = {

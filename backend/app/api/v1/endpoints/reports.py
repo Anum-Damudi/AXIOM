@@ -4,16 +4,25 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import CaseReport, Case
+from app.models import CaseReport, Case, User
 from app.schemas import ReportCreate, ReportResponse, ApiResponse
 from app.services import NlpService
 from app.core.exceptions import NotFoundException
+from app.core.security import require_roles
 
 router = APIRouter()
 
+READ_ROLES = require_roles("ADMIN", "INVESTIGATOR", "OFFICER")
+WRITE_ROLES = require_roles("ADMIN", "INVESTIGATOR")
+
 @router.post("/cases/{case_id}/reports", response_model=ApiResponse[ReportResponse], status_code=status.HTTP_201_CREATED, tags=["Reports"])
-def create_report(case_id: str, report_in: ReportCreate, db: Session = Depends(get_db)):
-    """Upload a raw narrative case report and trigger automatic NLP extraction pipeline."""
+def create_report(
+    case_id: str,
+    report_in: ReportCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(WRITE_ROLES)
+):
+    """Upload a raw narrative case report and trigger automatic NLP extraction pipeline (Admin/Investigator)."""
     case = db.query(Case).filter(Case.id == case_id).first()
     if not case:
         raise NotFoundException(message=f"Case {case_id} not found", code="CASE_NOT_FOUND")
@@ -30,6 +39,13 @@ def create_report(case_id: str, report_in: ReportCreate, db: Session = Depends(g
 
     # Trigger NLP Entity/Relationship Extraction Pipeline
     processed_report = NlpService.process_case_report(db, report.id)
+
+    from app.services.audit_service import AuditService
+    AuditService.log_action(
+        db, action="CREATE_REPORT", user_id=current_user.id,
+        resource_type="report", resource_id=report_id,
+        details={"case_id": case_id}
+    )
 
     nlp_dict = None
     if processed_report.nlp_output:
@@ -48,7 +64,11 @@ def create_report(case_id: str, report_in: ReportCreate, db: Session = Depends(g
     return ApiResponse(success=True, data=resp)
 
 @router.get("/cases/{case_id}/reports", response_model=ApiResponse[List[ReportResponse]], tags=["Reports"])
-def get_case_reports(case_id: str, db: Session = Depends(get_db)):
+def get_case_reports(
+    case_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(READ_ROLES)
+):
     """Fetch all reports associated with a specific case."""
     reports = db.query(CaseReport).filter(CaseReport.case_id == case_id).all()
     results = []
@@ -69,7 +89,11 @@ def get_case_reports(case_id: str, db: Session = Depends(get_db)):
     return ApiResponse(success=True, data=results)
 
 @router.get("/reports/{report_id}", response_model=ApiResponse[ReportResponse], tags=["Reports"])
-def get_report(report_id: str, db: Session = Depends(get_db)):
+def get_report(
+    report_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(READ_ROLES)
+):
     """Fetch report details and NLP extraction results."""
     r = db.query(CaseReport).filter(CaseReport.id == report_id).first()
     if not r:

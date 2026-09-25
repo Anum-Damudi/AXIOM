@@ -7,6 +7,7 @@ class SearchCategorizedResults(BaseModel):
     vehicles: List[Dict[str, Any]] = []
     locations: List[Dict[str, Any]] = []
     evidence: List[Dict[str, Any]] = []
+    phones: List[Dict[str, Any]] = []
 
 class UnifiedSearchResponse(BaseModel):
     query: str

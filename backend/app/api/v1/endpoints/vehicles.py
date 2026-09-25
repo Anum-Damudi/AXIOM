@@ -3,15 +3,23 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import Vehicle
+from app.models import Vehicle, User
 from app.schemas import VehicleCreate, VehicleResponse, ApiResponse, MetaPagination
 from app.core.exceptions import NotFoundException
+from app.core.security import require_roles
 
 router = APIRouter()
 
+READ_ROLES = require_roles("ADMIN", "INVESTIGATOR", "OFFICER")
+WRITE_ROLES = require_roles("ADMIN", "INVESTIGATOR")
+
 @router.post("", response_model=ApiResponse[VehicleResponse], status_code=status.HTTP_201_CREATED, tags=["Vehicles"])
-def create_vehicle(vehicle_in: VehicleCreate, db: Session = Depends(get_db)):
-    """Create a vehicle entity or reuse the same plate number if it already exists."""
+def create_vehicle(
+    vehicle_in: VehicleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(WRITE_ROLES)
+):
+    """Create a vehicle entity or reuse the same plate number if it already exists (Admin/Investigator)."""
     plate = (vehicle_in.plate_number or "").strip().upper()
     existing = db.query(Vehicle).filter(Vehicle.plate_number == plate).first()
     if existing:
@@ -29,7 +37,8 @@ def get_vehicles(
     keyword: Optional[str] = Query(None, description="Search plate number or ID"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(READ_ROLES)
 ):
     """List vehicle entities with filtering and pagination."""
     query = db.query(Vehicle)
@@ -46,7 +55,11 @@ def get_vehicles(
     return ApiResponse(success=True, data=[VehicleResponse.model_validate(v) for v in vehicles], meta=meta)
 
 @router.get("/{vehicle_id}", response_model=ApiResponse[VehicleResponse], tags=["Vehicles"])
-def get_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
+def get_vehicle(
+    vehicle_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(READ_ROLES)
+):
     """Fetch vehicle details by vehicle ID."""
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not vehicle:

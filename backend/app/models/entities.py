@@ -11,6 +11,7 @@ class Person(Base):
     role = Column(String, default="associate", index=True)  # suspect, witness, associate, victim
     normalized_name = Column(String, nullable=True, index=True)
     aliases = Column(String, nullable=True)  # Comma-separated or JSON string
+    photo_path = Column(String, nullable=True)  # Stored suspect photo (relative to UPLOAD_DIR)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Vehicle(Base):
