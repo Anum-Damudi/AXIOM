@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
 import RiskBadge from './RiskBadge'
+import EntityChipList from './entities/EntityChipList'
 
 const NODE_SHAPES = {
   PERSON: 'circle', CASE: 'rect', PHONE: 'diamond', LOCATION: 'hex',
@@ -201,7 +202,7 @@ export default function NetworkGraph({
   )
 }
 
-export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections, onAddToInvestigation, node: nodeProp, relationships: relsProp, entities: entitiesProp }) {
+export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections, onAddToInvestigation, onEntitySelect, node: nodeProp, relationships: relsProp, entities: entitiesProp }) {
   const node = nodeProp
   const allRels = relsProp || []
   const allEntities = entitiesProp || []
@@ -222,7 +223,8 @@ export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections,
   const connectedEntities = nodeRels.map(r => {
     const otherId = r.fromId === nodeId ? r.toId : r.fromId
     const other = allEntities.find(e => e.id === otherId)
-    return { ...other, relationship: RELATIONSHIP_LABELS[r.type] || r.type || 'CONNECTED' }
+    const relationship = RELATIONSHIP_LABELS[r.type] || r.type || 'CONNECTED'
+    return { ...other, relationship, displayLabel: `${other.name} · ${relationship}` }
   }).filter(e => e && e.name)
 
   return (
@@ -251,15 +253,13 @@ export function EntityPanel({ nodeId, onClose, onViewProfile, onViewConnections,
         {connectedEntities.length > 0 && (
           <div className="entity-panel__section">
             <span className="entity-panel__section-label">Relationships</span>
-            <div className="entity-panel__relationships">
-              {connectedEntities.map((cn, i) => (
-                <div key={i} className="entity-panel__rel-item">
-                  <span className="entity-panel__rel-label">{cn.relationship}</span>
-                  <span className="entity-panel__rel-name">{cn.name}</span>
-                  <span className="entity-panel__rel-type">{cn.type}</span>
-                </div>
-              ))}
-            </div>
+            <EntityChipList
+              entities={connectedEntities}
+              maxVisible={5}
+              title="Connected Entities"
+              onSelect={onEntitySelect}
+              emptyText="No connected entities."
+            />
           </div>
         )}
       </div>

@@ -13,7 +13,7 @@ export default function Login() {
   })
   const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!email.trim() || !password.trim()) {
@@ -21,7 +21,11 @@ export default function Login() {
       return
     }
     localStorage.setItem('nexus_remember', String(rememberMe))
-    login(email.trim(), email.trim())
+    try {
+      await login(email.trim(), password)
+    } catch (err) {
+      setError(err?.message || 'Sign in failed. Please check your credentials and try again.')
+    }
   }
 
   return (
@@ -62,14 +66,14 @@ export default function Login() {
             {error && <div className="login-error">{error}</div>}
 
             <label className="login-field">
-              <span>Email</span>
+              <span>Username or Email</span>
               <input
-                type="email"
-                placeholder="your@email.com"
+                type="text"
+                placeholder="your@axiom.local or username"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError('') }}
                 autoFocus
-                autoComplete="email"
+                autoComplete="username"
               />
             </label>
 

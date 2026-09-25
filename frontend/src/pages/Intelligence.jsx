@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import Icon from '../components/Icon'
-import RiskBadge from '../components/RiskBadge'
+import MetricGrid from '../components/ui/MetricGrid'
+import FormSection from '../components/forms/FormSection'
+import FormField from '../components/forms/FormField'
+import CheckboxGroup from '../components/forms/CheckboxGroup'
+import EntityChipList from '../components/entities/EntityChipList'
 
 const SOURCE_OPTIONS = ['Field Surveillance', 'Phone Intercept', 'Financial Records', 'Witness Statement', 'Digital Evidence', 'Human Intelligence', 'Other']
 
@@ -89,23 +93,15 @@ export default function Intelligence() {
         </div>
       </header>
 
-      <section className="stats-grid">
-        {[
-          { label: 'Total Intelligence Items', value: caseIntel.length, icon: 'shield', sub: 'Reports collected' },
-          { label: 'Entities', value: caseEntities.length, icon: 'users', sub: 'Persons of interest' },
-          { label: 'AI Suggestions', value: pendingSuggestions, icon: 'spark', sub: 'Pending review' },
-          { label: 'Relationships', value: caseRels.length, icon: 'network', sub: 'Mapped connections' },
-        ].map((stat, i) => (
-          <div key={i} className="stat-card">
-            <div className="stat-card__icon"><Icon name={stat.icon} className="icon-md" /></div>
-            <div className="stat-card__info">
-              <span className="stat-card__value">{stat.value}</span>
-              <span className="stat-card__label">{stat.label}</span>
-              <span className="stat-card__change">{stat.sub}</span>
-            </div>
-          </div>
-        ))}
-      </section>
+      <MetricGrid
+        ariaLabel="Intelligence metrics"
+        items={[
+          { id: 'intelligence-items', label: 'Total Intelligence Items', value: caseIntel.length, icon: 'shield', change: 'Reports collected' },
+          { id: 'entities', label: 'Entities', value: caseEntities.length, icon: 'users', change: 'Persons of interest' },
+          { id: 'suggestions', label: 'AI Suggestions', value: pendingSuggestions, icon: 'spark', change: 'Pending review' },
+          { id: 'relationships', label: 'Relationships', value: caseRels.length, icon: 'network', change: 'Mapped connections' },
+        ]}
+      />
 
       {caseEntities.length > 0 ? (
         <section className="panel">
@@ -113,38 +109,32 @@ export default function Intelligence() {
             <div><h3 className="panel__title">Add Intelligence Report</h3><p className="panel__subtitle">Submit a new intelligence item for this case</p></div>
           </header>
           <div className="panel__body">
-            <form onSubmit={handleSubmit} className="intel-form">
-              <div className="form-field">
-                <label>Description *</label>
-                <textarea rows={3} placeholder="Describe the intelligence item..." value={form.description} onChange={e => updateField('description', e.target.value)} required />
-              </div>
-              <div className="form-row">
-                <div className="form-field">
-                  <label>Source</label>
-                  <select value={form.source} onChange={e => updateField('source', e.target.value)}>
-                    {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <FormSection title="Report Information" subtitle="Describe the intelligence item being captured">
+                <FormField label="Description" required>
+                  <textarea rows={3} placeholder="Describe the intelligence item..." value={form.description} onChange={e => updateField('description', e.target.value)} required />
+                </FormField>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField label="Source">
+                    <select value={form.source} onChange={e => updateField('source', e.target.value)}>
+                      {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Date">
+                    <input type="date" value={form.date} onChange={e => updateField('date', e.target.value)} />
+                  </FormField>
                 </div>
-                <div className="form-field">
-                  <label>Date</label>
-                  <input type="date" value={form.date} onChange={e => updateField('date', e.target.value)} />
-                </div>
+              </FormSection>
+
+              <FormSection title="Entity Association" subtitle="Link the entities this report relates to">
+                <CheckboxGroup items={caseEntities} selected={form.entityIds} onToggle={toggleEntity} title="Related Entities" />
+              </FormSection>
+
+              <div className="flex items-center justify-end gap-3">
+                <button type="submit" className="btn btn--primary" disabled={!form.description.trim()}>
+                  <Icon name="plus" className="icon-sm" /> Add Intelligence
+                </button>
               </div>
-              <div className="form-field">
-                <label>Related Entities</label>
-                <div className="entity-checkbox-grid">
-                  {caseEntities.map(ent => (
-                    <label key={ent.id} className="entity-checkbox">
-                      <input type="checkbox" checked={form.entityIds.includes(ent.id)} onChange={() => toggleEntity(ent.id)} />
-                      <span>{ent.name}</span>
-                      <RiskBadge level={ent.risk} />
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <button type="submit" className="btn btn--primary" disabled={!form.description.trim()}>
-                <Icon name="plus" className="icon-sm" /> Add Intelligence
-              </button>
             </form>
           </div>
         </section>
@@ -157,24 +147,30 @@ export default function Intelligence() {
           <div><h3 className="panel__title">Intelligence Log</h3><p className="panel__subtitle">{caseIntel.length} item{caseIntel.length !== 1 ? 's' : ''}</p></div>
         </header>
         <div className="case-list">
-          {caseIntel.length > 0 ? caseIntel.map(item => (
-            <div key={item.id} className="case-list__item">
-              <div className="case-list__main">
-                <span className="case-list__name">{item.text || item.description}</span>
-                <span className="case-list__meta">
-                  <span className="intel-source-badge">{item.source}</span>
-                  {(item.relatedEntityIds || item.entityIds || []).map(eid => {
-                    const ent = caseEntities.find(e => e.id === eid)
-                    return ent ? <span key={eid} className="entity-tag">{ent.name}</span> : null
-                  })}
-                </span>
+          {caseIntel.length > 0 ? caseIntel.map(item => {
+            const related = (item.relatedEntityIds || item.entityIds || [])
+              .map(eid => caseEntities.find(e => e.id === eid))
+              .filter(Boolean)
+            return (
+              <div key={item.id} className="case-list__item">
+                <div className="case-list__main">
+                  <span className="case-list__name">{item.text || item.description}</span>
+                  <span className="case-list__status">
+                    <span className="intel-source-badge">{item.source}</span>
+                    <span className="intel-date">{item.date}</span>
+                  </span>
+                  {related.length > 0 && (
+                    <div className="case-list__tags">
+                      <EntityChipList entities={related} maxVisible={4} />
+                    </div>
+                  )}
+                </div>
+                <div className="case-list__meta">
+                  <span className="case-list__meta">{new Date(item.createdAt).toLocaleString()}</span>
+                </div>
               </div>
-              <div className="case-list__meta">
-                <span className="intel-date">{item.date}</span>
-                <span className="case-list__meta">{new Date(item.createdAt).toLocaleString()}</span>
-              </div>
-            </div>
-          )) : (
+            )
+          }) : (
             <div className="empty-state"><p>No intelligence items yet. Add your first intelligence report.</p></div>
           )}
         </div>

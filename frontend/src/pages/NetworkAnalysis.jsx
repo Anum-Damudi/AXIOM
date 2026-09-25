@@ -3,6 +3,9 @@ import { useApp } from '../context/AppContext'
 import Icon from '../components/Icon'
 import NetworkGraph, { EntityPanel } from '../components/NetworkGraph'
 import Modal from '../components/Modal'
+import FormSection from '../components/forms/FormSection'
+import FormField from '../components/forms/FormField'
+import EntityChipList from '../components/entities/EntityChipList'
 
 const ENTITY_TYPES = ['Person', 'Organization', 'Phone', 'Vehicle', 'Location', 'Bank Account', 'Digital Identifier', 'Contact', 'Other']
 const ENTITY_ROLES = ['Suspect', 'Witness', 'Victim', 'Investigator/Official', 'Other']
@@ -53,39 +56,42 @@ function AddEntityModal({ open, onClose, onAdd, caseId }) {
         <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
         <button type="submit" form="add-entity-form" className="btn btn--primary">Add Entity</button>
       </>}>
-      <form id="add-entity-form" className="form" onSubmit={handleSubmit}>
-        <label className="form-field">
-          <span>Entity Name</span>
-          <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. John Doe" required />
-        </label>
-        <label className="form-field">
-          <span>Entity Type</span>
-          <select value={form.type} onChange={e => setForm({...form, type: e.target.value, role: e.target.type === 'Person' ? form.role : ''})}>
-            {ENTITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
-        {form.type === 'Person' && (
-          <label className="form-field">
-            <span>Entity Role</span>
-            <select value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-              <option value="">Select role...</option>
-              {ENTITY_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </label>
-        )}
-        <label className="form-field">
-          <span>Risk Level</span>
-          <select value={form.risk} onChange={e => setForm({...form, risk: e.target.value})}>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
-          </select>
-        </label>
-        <label className="form-field">
-          <span>Description</span>
-          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} placeholder="Brief description" />
-        </label>
+      <form id="add-entity-form" className="space-y-4" onSubmit={handleSubmit}>
+        <FormSection title="Entity Identity" subtitle="Classify the person, organization, asset, or location">
+          <FormField label="Entity Name" required full>
+            <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. John Doe" required />
+          </FormField>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label="Entity Type">
+              <select value={form.type} onChange={e => setForm({...form, type: e.target.value, role: e.target.value === 'Person' ? form.role : ''})}>
+                {ENTITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </FormField>
+            {form.type === 'Person' && (
+              <FormField label="Entity Role">
+                <select value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+                  <option value="">Select role...</option>
+                  {ENTITY_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </FormField>
+            )}
+          </div>
+        </FormSection>
+        <FormSection title="Risk & Context" subtitle="Set the initial assessment and investigative context">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label="Risk Level">
+              <select value={form.risk} onChange={e => setForm({...form, risk: e.target.value})}>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </FormField>
+            <FormField label="Description" full>
+              <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} placeholder="Brief description" />
+            </FormField>
+          </div>
+        </FormSection>
       </form>
     </Modal>
   )
@@ -108,27 +114,28 @@ function AddRelationshipModal({ open, onClose, onAdd, caseId, entities }) {
         <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
         <button type="submit" form="add-rel-form" className="btn btn--primary">Add Relationship</button>
       </>}>
-      <form id="add-rel-form" className="form" onSubmit={handleSubmit}>
-        <label className="form-field">
-          <span>From Entity</span>
-          <select value={form.fromId} onChange={e => setForm({...form, fromId: e.target.value})} required>
-            <option value="">Select entity...</option>
-            {caseEntities.map(en => <option key={en.id} value={en.id}>{en.name} ({en.type})</option>)}
-          </select>
-        </label>
-        <label className="form-field">
-          <span>Relationship Type</span>
-          <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-            {RELATIONSHIP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
-        <label className="form-field">
-          <span>To Entity</span>
-          <select value={form.toId} onChange={e => setForm({...form, toId: e.target.value})} required>
-            <option value="">Select entity...</option>
-            {caseEntities.filter(en => en.id !== form.fromId).map(en => <option key={en.id} value={en.id}>{en.name} ({en.type})</option>)}
-          </select>
-        </label>
+      <form id="add-rel-form" className="space-y-4" onSubmit={handleSubmit}>
+        <FormSection title="Relationship" subtitle="Connect two entities already mapped to this case">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label="From Entity" required>
+              <select value={form.fromId} onChange={e => setForm({...form, fromId: e.target.value, toId: e.target.value === form.toId ? '' : form.toId})} required>
+                <option value="">Select entity...</option>
+                {caseEntities.map(en => <option key={en.id} value={en.id}>{en.name} ({en.type})</option>)}
+              </select>
+            </FormField>
+            <FormField label="Relationship Type">
+              <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+                {RELATIONSHIP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </FormField>
+            <FormField label="To Entity" required>
+              <select value={form.toId} onChange={e => setForm({...form, toId: e.target.value})} required>
+                <option value="">Select entity...</option>
+                {caseEntities.filter(en => en.id !== form.fromId).map(en => <option key={en.id} value={en.id}>{en.name} ({en.type})</option>)}
+              </select>
+            </FormField>
+          </div>
+        </FormSection>
       </form>
     </Modal>
   )
@@ -194,20 +201,25 @@ export default function NetworkAnalysis() {
   const [filters, setFilters] = useState({ type: 'all', risk: 'all' })
   const prevCaseIdRef = useRef(null)
 
+  const contextCase = useMemo(
+    () => cases.find(c => c.id === contextCaseId) || null,
+    [cases, contextCaseId]
+  )
+
   useEffect(() => {
-    if (contextCaseId && cases.find(c => c.id === contextCaseId)) {
-      const next = cases.find(c => c.id === contextCaseId)
+    const next = contextCase || (prevCaseIdRef.current === null ? cases[0] : null)
+    if (!next) return
+    const frame = window.requestAnimationFrame(() => {
       setSelectedCaseLocal(next)
-      if (prevCaseIdRef.current !== next?.id) {
-        prevCaseIdRef.current = next?.id
+      if (prevCaseIdRef.current !== next.id) {
+        prevCaseIdRef.current = next.id
         setSearchEntity('')
         setFilters({ type: 'all', risk: 'all' })
         setSelectedNetworkNode(null)
       }
-    } else if (!selectedCaseLocal && cases.length > 0) {
-      setSelectedCaseLocal(cases[0])
-    }
-  }, [contextCaseId, cases])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [contextCase, cases, setSelectedNetworkNode])
 
   const caseEntities = useMemo(() =>
     selectedCaseLocal ? entities.filter(e => e.caseId === selectedCaseLocal.id) : [],
@@ -234,11 +246,13 @@ export default function NetworkAnalysis() {
   )
 
   useEffect(() => {
-    if (networkFocusEntity) {
+    if (!networkFocusEntity) return
+    const frame = window.requestAnimationFrame(() => {
       const ent = caseEntities.find(e => e.id === networkFocusEntity)
       if (ent) setSelectedNetworkNode(ent.id)
-    }
-  }, [networkFocusEntity, caseEntities])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [networkFocusEntity, caseEntities, setSelectedNetworkNode])
 
   const graphNodes = useMemo(() => caseEntities.map(e => ({
     id: e.id, label: e.name, type: e.type?.toUpperCase() || 'OTHER',
@@ -375,6 +389,18 @@ export default function NetworkAnalysis() {
           </label>
           <button type="button" className="btn btn--ghost btn--sm btn--full" onClick={clearFilters}>Clear Filters</button>
 
+          {caseEntities.length > 0 && (
+            <div className="network-controls__entities">
+              <h4>Case Entities</h4>
+              <EntityChipList
+                entities={caseEntities}
+                maxVisible={5}
+                title="Case Entities"
+                onSelect={(entity) => setSelectedNetworkNode(entity.id)}
+              />
+            </div>
+          )}
+
           <div className="network-controls__divider" />
 
           <button type="button" className="btn btn--primary btn--sm btn--full" onClick={() => setAddEntityModalOpen(true)}>
@@ -497,6 +523,7 @@ export default function NetworkAnalysis() {
             showToast(`Found ${rels.length} direct connections`, 'info')
           }}}
           onAddToInvestigation={() => { if (selectedEntity) showToast(`${selectedEntity.name} added to active investigation`, 'success') }}
+          onEntitySelect={(entity) => setSelectedNetworkNode(entity.id)}
         />
       </div>
 

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import Icon from './Icon'
+import FormSection from './forms/FormSection'
+import FormField from './forms/FormField'
 import { getStoredGoogleMapsApiKey, saveGoogleMapsApiKey, loadGoogleMaps } from '../utils/googleMapsLoader'
 
 export default function GoogleMapsKeyModal({ open, onClose, onKeySaved, onFallbackSelected }) {
@@ -85,55 +87,32 @@ export default function GoogleMapsKeyModal({ open, onClose, onKeySaved, onFallba
         </div>
       }
     >
-      <div className="google-maps-modal-content">
-        <div className="google-maps-banner">
-          <div className="google-maps-banner__icon">
-            <Icon name="map" className="icon-md" />
-          </div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Google Maps JavaScript API</h4>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-              Enable live satellite aerial photography, dark tactical mapping, places autocomplete, and reverse geocoding.
-            </p>
-          </div>
-        </div>
+      <FormSection title="Map Provider" subtitle="Enable live maps, Places autocomplete, and reverse geocoding">
 
-        <div className="loc-form__group" style={{ marginTop: 16 }}>
-          <label className="loc-form__label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>API Key</span>
-            <button
-              type="button"
-              className="btn btn--ghost btn--xs"
-              onClick={() => setShowKey(!showKey)}
-              style={{ fontSize: 11, padding: '2px 6px', height: 'auto' }}
-            >
-              {showKey ? 'Hide' : 'Show'}
+        <div className="mt-4">
+          <div className="mb-1.5 flex justify-end">
+            <button type="button" className="btn btn--ghost btn--xs" onClick={() => setShowKey(!showKey)}>
+              {showKey ? 'Hide key' : 'Show key'}
             </button>
-          </label>
-          <div style={{ position: 'relative' }}>
+          </div>
+          <FormField
+            label="API Key"
+            hint="Saved locally, or configured in frontend/.env as VITE_GOOGLE_MAPS_API_KEY"
+          >
             <input
               type={showKey ? 'text' : 'password'}
-              className="loc-form__input mono"
+              className="mono"
               placeholder="AIzaSy..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              style={{ paddingRight: 40 }}
+              autoComplete="off"
             />
-            {apiKey && (
-              <button
-                type="button"
-                className="btn btn--ghost btn--xs"
-                onClick={() => setApiKey('')}
-                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
-                title="Clear key"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <span className="loc-form__hint" style={{ fontSize: 11, marginTop: 4 }}>
-            Saved locally in your browser storage or configure in <code>frontend/.env</code> as <code>VITE_GOOGLE_MAPS_API_KEY</code>.
-          </span>
+          </FormField>
+          {apiKey && (
+            <button type="button" className="btn btn--ghost btn--xs mt-2" onClick={() => setApiKey('')}>
+              Clear key
+            </button>
+          )}
         </div>
 
         {statusMessage && (
@@ -157,7 +136,7 @@ export default function GoogleMapsKeyModal({ open, onClose, onKeySaved, onFallba
             <li>Generate an API Key under Credentials and paste it above.</li>
           </ol>
         </div>
-      </div>
+      </FormSection>
     </Modal>
   )
 }

@@ -1,43 +1,68 @@
 /**
- * Authentication service — prototype mock implementation.
- * Replace with real API calls (POST /api/auth/login, etc.) in production.
- * Frontend-only auth is NOT secure and must not be used in production.
+ * Authentication service — talks to the real AXIOM backend.
+ * All credentials are verified server-side; nothing is persisted or validated
+ * in the browser. Passwords are never stored client-side.
  */
 
-import { DEMO_USERS, sanitizeUser } from '../data/users'
+export const API_BASE = '/api/v1'
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  })
 
-export async function mockLogin(email, password) {
-  await delay(500)
-  const user = DEMO_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase().trim())
-  if (!user || user.password !== password) {
-    throw new Error('Invalid official email or password.')
+  let body
+  try {
+    body = await response.json()
+  } catch {
+    body = null
   }
+
+  if (!response.ok) {
+    const message =
+      body?.message ||
+      body?.error ||
+      (typeof body?.detail === 'string' ? body.detail : null) ||
+      `Request failed with status ${response.status}`
+    const code =
+      body?.code ||
+      (body?.detail && typeof body.detail === 'object' ? body.detail.code : null)
+    const err = new Error(message)
+    err.status = response.status
+    err.code = code
+    throw err
+  }
+
+  return body
+}
+
+export async function login(identifier, password) {
+  const resp = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: identifier, password }),
+  })
   return {
-    user: sanitizeUser({ ...user, lastLogin: new Date().toISOString() }),
-    token: `mock-token-${user.id}-${Date.now()}`,
+    token: resp.data.access_token,
+    user: resp.data.user,
   }
 }
 
-export async function mockForgotPassword(email) {
-  await delay(600)
-  const exists = DEMO_USERS.some((u) => u.email.toLowerCase() === email.toLowerCase().trim())
-  if (!exists) {
-    throw new Error('No account found for this email address.')
-  }
-  return { success: true }
+export async function getMe(token) {
+  const resp = await request('/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return resp.data
 }
 
-export async function mockAccessRequest(data) {
-  await delay(700)
-  return { id: `REQ-${Date.now()}`, ...data, status: 'Pending', submittedAt: new Date().toISOString() }
-}
-
-export async function mockChangePassword(currentPassword, newPassword) {
-  await delay(400)
-  if (!currentPassword || !newPassword || newPassword.length < 6) {
-    throw new Error('Password must be at least 6 characters.')
-  }
-  return { success: true }
+export async function changePassword(currentPassword, newPassword, token) {
+  const resp = await request('/auth/change-password', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ old_password: currentPassword, new_password: newPassword }),
+  })
+  return resp
 }

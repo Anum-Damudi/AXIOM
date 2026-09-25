@@ -1,12 +1,15 @@
 /* ── Layout ─────────────────────────────────────────────── */
 
 .app {
+  position: relative;
   display: flex;
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 .main {
+  position: relative;
+  z-index: 2;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -18,6 +21,8 @@
   flex: 1;
   padding: 28px 32px 40px;
   overflow-x: hidden;
+  position: relative;
+  background: radial-gradient(ellipse 140% 60% at 50% -10%, rgba(11, 34, 49, 0.45) 0%, rgba(2, 11, 18, 0.65) 60%);
 }
 
 .sidebar-backdrop {
@@ -41,7 +46,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0a0f18 0%, #070b12 100%);
+  background: linear-gradient(180deg, #071824 0%, #042a41 100%);
   border-right: 1px solid var(--border-default);
   overflow-y: auto;
 }
@@ -245,7 +250,7 @@
   gap: 16px;
   height: var(--header-height);
   padding: 0 32px;
-  background: rgba(7, 11, 18, 0.85);
+  background: rgba(4, 42, 65, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -445,7 +450,7 @@
   padding: 36px 40px;
   margin-bottom: 28px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #0f1729 0%, #111827 50%, #0c1422 100%);
+  background: linear-gradient(135deg, #042a41 0%, #071824 55%, #0b2231 100%);
   border: 1px solid var(--border-default);
   overflow: hidden;
 }
@@ -513,15 +518,15 @@
       0deg,
       transparent,
       transparent 19px,
-      rgba(34, 211, 238, 0.06) 19px,
-      rgba(34, 211, 238, 0.06) 20px
+      rgba(54, 92, 115, 0.14) 19px,
+      rgba(54, 92, 115, 0.14) 20px
     ),
     repeating-linear-gradient(
       90deg,
       transparent,
       transparent 19px,
-      rgba(34, 211, 238, 0.06) 19px,
-      rgba(34, 211, 238, 0.06) 20px
+      rgba(54, 92, 115, 0.14) 19px,
+      rgba(54, 92, 115, 0.14) 20px
     );
   box-shadow: 0 0 40px var(--accent-glow);
 }
@@ -7063,8 +7068,379 @@
   display: none !important;
 }
 
+/* ── AXIOM UI/UX refactor ────────────────────────────────── */
+
+/* Live animated aurora background — fixed, inert, always behind the UI. */
+.aurora-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.aurora-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 120% 55% at 50% -8%, rgba(4, 42, 65, 0) 0%, rgba(4, 42, 65, 0.76) 78%),
+    linear-gradient(180deg, rgba(0, 70, 113, 0.14) 0%, rgba(4, 42, 65, 0) 40%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-canvas {
+    background: var(--bg-primary);
+  }
+}
+
+/* Form controls shared by the refactored form components. */
+.axm-input,
+.axm-input--full {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.45;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.axm-input::placeholder {
+  color: var(--text-muted);
+}
+
+.axm-input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+textarea.axm-input {
+  resize: vertical;
+}
+
+/* Notification items — structured rows instead of run-together log lines. */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.notif-item--unread {
+  background: var(--accent-glow);
+}
+
+.notif-item--unread .notif-item__dot {
+  display: inline-block;
+}
+
+.notif-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border-radius: 8px;
+  background: var(--accent-glow);
+  border: 1px solid var(--border-subtle);
+  color: var(--accent);
+}
+
+.notif-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notif-item__kind {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.notif-item__message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.notif-item__time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.notif-item__dot {
+  display: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+/* Entity tags used across intelligence surfaces — compact chips. */
+.entity-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stat/metric cards — restrained, uniform, readable big numbers. */
+.stat-card {
+  min-height: 116px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 24px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+  opacity: 0.4;
+}
+
+.stat-card__value {
+  font-size: 30px;
+}
+
+/* High-density tables: identifiers stay on one line. */
+.data-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.data-table td.data-table__desc {
+  white-space: normal;
+}
+
+/* Panel density — slightly tighter headers, crisper separation. */
+.panel__header {
+  padding: 16px 24px 14px;
+}
+
+.case-list__item--clickable {
+  padding: 11px 24px;
+}
+
+.case-list__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
 .gm-ui-hover-effect {
   filter: invert(1) !important;
   top: 4px !important;
   right: 4px !important;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--metric-grid-min, 12rem)), 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.metric-grid > [role='listitem'],
+.metric-card {
+  min-width: 0;
+  width: 100%;
+}
+
+.metric-card {
+  min-height: 116px;
+  border-radius: var(--radius-md);
+}
+
+button.metric-card:focus-visible,
+.entity-chip:focus-visible,
+.entity-chip-list__more:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.entity-chip-list {
+  min-width: 0;
+}
+
+.entity-chip-list .entity-chip {
+  max-width: 100%;
+}
+
+.network-controls__entities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.network-controls__entities h4 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.network-controls__entities .entity-chip-list {
+  gap: 6px;
+}
+
+.notif-item__details {
+  display: grid;
+  gap: 7px;
+  margin: 5px 0 0;
+}
+
+.notif-item__details > div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.notif-item__details dt {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  text-transform: uppercase;
+}
+
+.notif-item__details dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.notif-item__message {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notif-item__time {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.custody-timeline__header,
+.custody-timeline__title {
+  display: flex;
+  align-items: center;
+}
+
+.custody-timeline__header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.custody-timeline__title {
+  gap: 7px;
+}
+
+.custody-timeline__title h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.custody-timeline__list {
+  display: grid;
+  gap: 8px;
+}
+
+.custody-timeline__item {
+  display: grid;
+  grid-template-columns: minmax(112px, 0.38fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.custody-timeline__date {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.custody-timeline__event {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.custody-timeline__reason,
+.custody-timeline__loading {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.custody-timeline__reason {
+  display: block;
+  margin-top: 3px;
+}
+
+.custody-timeline__loading {
+  padding: 10px 0;
+}
+
+.axm-input:disabled,
+.axm-input[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+select.axm-input option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .notif-item__details > div,
+  .custody-timeline__item {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
 }

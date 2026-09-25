@@ -78,3 +78,56 @@ docker-compose up --build
 - **Network Analytics:** `GET /api/v1/analytics/key-persons`, `/communities`, `/hidden-links` powered by Neo4j & NetworkX centrality and community detection.
 - **Unified Investigation Search:** `GET /api/v1/search?q=...` multi-domain search engine.
 - **Case Timeline Aggregator:** Chronological event timeline aggregator per case.
+
+## New Features (Phase A, B, C)
+
+### Phase A: Evidence Ledger (Blockchain)
+- **Immutable Evidence Ledger:** Append-only blockchain for evidence integrity with hash-chained blocks and Merkle tree sealing
+- **SHA-256 Hashing:** Cryptographic file integrity verification for all uploaded evidence
+- **Custody Transfer Tracking:** Complete audit trail of evidence custody changes
+- **Blockchain Anchoring:** Optional Ethereum blockchain anchoring via web3.py for tamper-proof verification
+- **Verification Endpoints:** Chain verification, evidence verification, and Merkle proof generation
+- **Background Sealing:** Automatic periodic block sealing based on configurable thresholds
+
+### Phase B: Multi-Image Evidence
+- **Batch Upload:** Upload multiple evidence files simultaneously with duplicate detection
+- **Magic Bytes Validation:** File type verification using binary signatures
+- **Perceptual Hashing:** Image duplicate detection using imagehash library
+- **Thumbnail Generation:** Automatic thumbnail creation for image evidence
+- **EXIF Extraction:** Metadata extraction from images (GPS, camera info, timestamps)
+- **Evidence Suggestions:** AI-generated suggestions from CV analysis (object matches, etc.)
+- **Storage Backend Interface:** Pluggable storage backends (Local, S3)
+
+### Phase C: Phone Intelligence
+- **CDR Import:** Call Detail Record (CDR) CSV import with phone number normalization
+- **Phone Profiling:** Comprehensive phone profiles with call statistics and associations
+- **Movement Analysis:** Location tracking and movement pattern analysis from tower data
+- **Network Analysis:** Call network analysis with contact frequency and peak hours
+- **Co-location Detection:** Identify when multiple phones were at the same location
+- **Burner Phone Detection:** Identify potential burner phones based on usage patterns
+- **Neo4j Sync:** Automatic phone graph synchronization for network visualization
+
+## New API Endpoints
+
+### Ledger Endpoints
+- `GET /api/v1/ledger/blocks` - List all ledger blocks
+- `GET /api/v1/ledger/verify-chain` - Verify chain integrity
+- `POST /api/v1/ledger/seal` - Manually trigger block sealing
+- `POST /api/v1/ledger/custody/{evidence_id}` - Transfer evidence custody
+- `GET /api/v1/ledger/evidence/{evidence_id}/verify` - Verify evidence integrity
+- `GET /api/v1/ledger/evidence/{evidence_id}/merkle-proof` - Get Merkle proof
+
+### Evidence Endpoints (Extended)
+- `POST /api/v1/cases/{case_id}/evidence/batch` - Batch upload evidence
+- `GET /api/v1/evidence/{evidence_id}/suggestions` - Get AI suggestions
+- `POST /api/v1/suggestions/{suggestion_id}/action` - Confirm/reject suggestions
+
+### Phone Endpoints
+- `POST /api/v1/cases/{case_id}/cdr/import` - Import CDR data
+- `GET /api/v1/phones/{phone_number}/profile` - Get phone profile
+- `GET /api/v1/phones/{phone_number}/movement` - Analyze movement patterns
+- `GET /api/v1/phones/{phone_number}/network` - Analyze call network
+- `POST /api/v1/phones/colocation` - Analyze co-location
+- `GET /api/v1/phones/{phone_number}/burner-detection` - Detect burner phones
+- `GET /api/v1/phones/{phone_number}/graph` - Get Neo4j network graph
+- `GET /api/v1/phones/{phone1}/path/{phone2}` - Find shortest call path

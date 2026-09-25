@@ -4,6 +4,7 @@ import Drawer from '../components/Drawer'
 import Icon from '../components/Icon'
 import { NewCaseModal } from '../components/InvestigationModal'
 import RiskBadge from '../components/RiskBadge'
+import EntityChipList from '../components/entities/EntityChipList'
 
 export default function Cases() {
   const {
@@ -125,11 +126,13 @@ export default function Cases() {
 
             <section className="case-detail__section">
               <h4>Entities ({caseEnts.length})</h4>
-              {caseEnts.length > 0 ? (
-                <ul className="detail-list">
-                  {caseEnts.map(e => <li key={e.id}>{e.name} ({e.type})</li>)}
-                </ul>
-              ) : <p className="text-muted">No entities added yet.</p>}
+              <EntityChipList
+                entities={caseEnts}
+                maxVisible={6}
+                title="Case Entities"
+                onSelect={(entity) => navigate('network', { suspectId: entity.id })}
+                emptyText="No entities added yet."
+              />
             </section>
 
             <section className="case-detail__section">

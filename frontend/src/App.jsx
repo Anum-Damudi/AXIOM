@@ -19,12 +19,20 @@ import Intelligence from './pages/Intelligence'
 import Reports from './pages/Reports'
 import MapView from './pages/MapView'
 import Analytics from './pages/Analytics'
+import Phones from './pages/Phones'
+import Ledger from './pages/Ledger'
+import AccessRestricted from './pages/AccessRestricted'
+import AuroraBackground from './components/background/AuroraBackground'
 import './App.css'
+
+// Views that require write/administrative privilege (outside OFFICER read-only scope).
+const PRIVILEGED_VIEWS = new Set(['ledger', 'settings'])
 
 function AppContent() {
   const {
     isAuthenticated, page, activeView, investigationModalOpen, setInvestigationModalOpen,
     createInvestigation, toasts, settings, newCaseModalOpen, setNewCaseModalOpen, addCase,
+    user, navigate,
   } = useApp()
 
   useEffect(() => {
@@ -34,23 +42,37 @@ function AppContent() {
   if (page === 'landing') return <><LandingPage /><ToastContainer toasts={toasts} /></>
   if (page === 'login' || !isAuthenticated) return <><Login /><ToastContainer toasts={toasts} /></>
 
+  const isOfficer = user?.roleKey === 'officer'
+
+  const hasAccess = (view) => {
+    if (!isOfficer) return true
+    return !PRIVILEGED_VIEWS.has(view)
+  }
+
   const renderPage = () => {
+    if (!hasAccess(activeView)) {
+      return <AccessRestricted onBack={() => navigate('dashboard')} />
+    }
     switch (activeView) {
       case 'network': return <NetworkAnalysis />
       case 'cases': return <Cases />
       case 'suspects': return <Suspects />
       case 'evidence': return <Evidence />
-      case 'settings': return <Settings />
+      case 'phones': return <Phones />
       case 'intelligence': return <Intelligence />
+      case 'ledger': return <Ledger />
       case 'reports': return <Reports />
       case 'map': return <MapView />
       case 'analytics': return <Analytics />
+      case 'settings': return <Settings />
       default: return <Dashboard />
     }
   }
 
   return (
     <div className="app">
+      <AuroraBackground />
+      <div className="aurora-overlay" aria-hidden="true" />
       <Sidebar />
       <div className="main">
         <TopBar />

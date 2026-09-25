@@ -3,12 +3,14 @@ import { useApp } from '../context/AppContext'
 import Icon from '../components/Icon'
 import NetworkGraph from '../components/NetworkGraph'
 import RiskBadge from '../components/RiskBadge'
-import StatCard from '../components/StatCard'
+import MetricGrid from '../components/ui/MetricGrid'
+import AlertCard from '../components/alerts/AlertCard'
+import EntityChipList from '../components/entities/EntityChipList'
 
 const TYPE_COLORS = {
-  PERSON: '#22d3ee', ORGANIZATION: '#a78bfa', PHONE: '#fbbf24', LOCATION: '#4ade80',
-  BANK: '#f87171', VEHICLE: '#94a3b8', EVIDENCE: '#fb923c', CASE: '#38bdf8',
-  OTHER: '#94a3b8', CONTACT: '#fbbf24',
+  PERSON: '#c2e8ff', ORGANIZATION: '#8598b8', PHONE: '#e3c07a', LOCATION: '#9cc4a8',
+  BANK: '#e8a09a', VEHICLE: '#94a3b8', EVIDENCE: '#d9a06a', CASE: '#7298af',
+  OTHER: '#94a3b8', CONTACT: '#e3c07a',
 }
 
 function CaseOverview() {
@@ -57,15 +59,18 @@ function CaseOverview() {
         <div className="hero__visual"><div className="hero__grid" aria-hidden="true" /></div>
       </section>
 
-      <section className="stats-grid">
-        <StatCard stat={{ id: 'suspects', label: 'Suspects', value: String(suspects.length), change: suspects.length === 1 ? 'Person of interest' : 'Persons of interest', icon: 'users' }} onClick={() => navigate('suspects')} />
-        <StatCard stat={{ id: 'evidence', label: 'Evidence', value: String(caseEvidence.length), change: `${caseEvidence.length} item${caseEvidence.length !== 1 ? 's' : ''}`, icon: 'shield' }} onClick={() => navigate('evidence')} />
-        <StatCard stat={{ id: 'entities', label: 'Entities', value: String(ents.length), change: 'Mapped nodes', icon: 'users' }} onClick={() => navigate('network')} />
-        <StatCard stat={{ id: 'rels', label: 'Relationships', value: String(confirmed.length), change: `${rels.length} total`, icon: 'link' }} onClick={() => navigate('network')} />
-        <StatCard stat={{ id: 'locs', label: 'Locations', value: String(caseLocations.length), change: 'Tracked points', icon: 'location' }} onClick={() => navigate('map')} />
-        <StatCard stat={{ id: 'ai', label: 'AI Suggestions', value: String(pending.length), change: 'Pending review', icon: 'ai' }} onClick={() => navigate('network')} />
-        <StatCard stat={{ id: 'tl', label: 'Timeline Events', value: String(timeline.filter(t => t.caseId === selectedCaseId).length), change: 'Case events', icon: 'clock' }} onClick={() => navigate('network')} />
-      </section>
+      <MetricGrid
+        ariaLabel="Case metrics"
+        items={[
+          { id: 'suspects', label: 'Suspects', value: suspects.length, change: suspects.length === 1 ? 'Person of interest' : 'Persons of interest', icon: 'users', onClick: () => navigate('suspects') },
+          { id: 'evidence', label: 'Evidence', value: caseEvidence.length, change: `${caseEvidence.length} item${caseEvidence.length !== 1 ? 's' : ''}`, icon: 'shield', onClick: () => navigate('evidence') },
+          { id: 'entities', label: 'Entities', value: ents.length, change: 'Mapped nodes', icon: 'users', onClick: () => navigate('network') },
+          { id: 'relationships', label: 'Relationships', value: confirmed.length, change: `${rels.length} total`, icon: 'link', onClick: () => navigate('network') },
+          { id: 'locations', label: 'Locations', value: caseLocations.length, change: 'Tracked points', icon: 'location', onClick: () => navigate('map') },
+          { id: 'suggestions', label: 'AI Suggestions', value: pending.length, change: 'Pending review', icon: 'ai', onClick: () => navigate('network') },
+          { id: 'timeline', label: 'Timeline Events', value: timeline.filter(t => t.caseId === selectedCaseId).length, change: 'Case events', icon: 'clock', onClick: () => navigate('network') },
+        ]}
+      />
 
       <div className="dashboard-grid">
         <section className="panel">
@@ -234,12 +239,15 @@ function GeneralOverview() {
         <div className="hero__visual"><div className="hero__grid" aria-hidden="true" /></div>
       </section>
 
-      <section className="stats-grid">
-        <StatCard stat={{ id: 'cases', label: 'Active Cases', value: String(activeCases.length), change: `${cases.length} total`, icon: 'folder' }} onClick={() => navigate('cases')} />
-        <StatCard stat={{ id: 'entities', label: 'Entities', value: String(entities.length), change: `${highRisk.length} high risk`, icon: 'users' }} onClick={() => navigate('suspects')} />
-        <StatCard stat={{ id: 'rels', label: 'Relationships', value: String(relationships.length), change: 'Mapped connections', icon: 'link' }} onClick={() => navigate('network')} />
-        <StatCard stat={{ id: 'evidence', label: 'Evidence', value: String(evidence.length), change: 'Total collected', icon: 'shield' }} onClick={() => navigate('evidence')} />
-      </section>
+      <MetricGrid
+        ariaLabel="Workspace metrics"
+        items={[
+          { id: 'cases', label: 'Active Cases', value: activeCases.length, change: `${cases.length} total`, icon: 'folder', onClick: () => navigate('cases') },
+          { id: 'entities', label: 'Entities', value: entities.length, change: `${highRisk.length} high risk`, icon: 'users', onClick: () => navigate('suspects') },
+          { id: 'relationships', label: 'Relationships', value: relationships.length, change: 'Mapped connections', icon: 'link', onClick: () => navigate('network') },
+          { id: 'evidence', label: 'Evidence', value: evidence.length, change: 'Total collected', icon: 'shield', onClick: () => navigate('evidence') },
+        ]}
+      />
 
       <div className="dashboard-grid">
         <section className="panel">
@@ -264,14 +272,23 @@ function GeneralOverview() {
         </section>
 
         <section className="panel">
-          <header className="panel__header">
-            <div><h3 className="panel__title">AI Network Insights</h3><p className="panel__subtitle">System-wide intelligence summary</p></div>
-          </header>
-          <div className="ai-insight__list">
-            <p className="ai-insight__text">{entities.length} entities mapped across {cases.length} cases with {relationships.length} relationships.</p>
-            {highRisk.length > 0 && <p className="ai-insight__text">{highRisk.length} high-risk entities require immediate attention.</p>}
-            {relationships.length === 0 && <p className="ai-insight__text">Add entities and relationships to enable network analysis.</p>}
-          </div>
+          <AlertCard
+            kind="Intelligence"
+            icon="ai"
+            title="System-wide intelligence summary"
+            rows={[
+              { label: 'Entities', value: `${entities.length} mapped across ${cases.length} cases` },
+              { label: 'Relationships', value: `${relationships.length} direct relationships` },
+              { label: 'High Risk', value: `${highRisk.length} entities require attention` },
+              ...(highRisk.length > 0
+                ? [{ label: 'Priority', value: <EntityChipList entities={highRisk} maxVisible={3} showStatus={false} title="High-Risk Entities" /> }]
+                : []),
+              ...(relationships.length === 0
+                ? [{ label: 'Guidance', value: 'Add entities and relationships to enable network analysis.' }]
+                : []),
+            ]}
+            action={relationships.length > 1 ? { label: 'Go to Network Analysis', onClick: () => navigate('network') } : undefined}
+          />
         </section>
       </div>
 

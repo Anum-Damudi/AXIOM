@@ -77,19 +77,36 @@ export const DEMO_USERS = [
 ];
 
 export function sanitizeUser(user) {
-  const { password, ...safe } = user
+  const safe = { ...user }
+  delete safe.password
   return safe
 }
 
-export const getNavByRole = () => [
+export const ALL_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: "home" },
   { id: "cases", label: "Cases", icon: "briefcase" },
   { id: "suspects", label: "Suspects", icon: "users" },
   { id: "evidence", label: "Evidence", icon: "shield" },
+  { id: "phones", label: "Phone Intelligence", icon: "phone" },
   { id: "intelligence", label: "Intelligence", icon: "activity" },
   { id: "network", label: "Network Analysis", icon: "network" },
+  { id: "ledger", label: "Evidence Ledger", icon: "lock" },
   { id: "reports", label: "Reports", icon: "fileText" },
   { id: "analytics", label: "Analytics", icon: "chart" },
   { id: "map", label: "Map View", icon: "map" },
   { id: "settings", label: "Settings", icon: "settings" }
 ];
+
+// Read-only views open to every authenticated role (admin/investigator manage all).
+const OFFICER_NAV_IDS = new Set([
+  "dashboard", "cases", "suspects", "evidence", "phones",
+  "intelligence", "network", "reports", "analytics", "map",
+]);
+
+export const getNavByRole = (roleKey) => {
+  const key = String(roleKey || 'investigator').toLowerCase()
+  if (key === 'officer') {
+    return ALL_NAV_ITEMS.filter((item) => OFFICER_NAV_IDS.has(item.id))
+  }
+  return ALL_NAV_ITEMS
+};

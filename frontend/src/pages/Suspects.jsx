@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import Drawer from '../components/Drawer'
 import Icon from '../components/Icon'
 import RiskBadge from '../components/RiskBadge'
+import EntityChipList from '../components/entities/EntityChipList'
 
 export default function Suspects() {
   const {
@@ -60,6 +61,15 @@ export default function Suspects() {
   )
 
   const getSuspectRels = (entityId) => caseRelationships.filter(r => r.fromId === entityId || r.toId === entityId)
+  const getRelatedEntities = (entityId) => getSuspectRels(entityId)
+    .map((relationship) => {
+      const otherId = relationship.fromId === entityId ? relationship.toId : relationship.fromId
+      const entity = caseEntities.find(item => item.id === otherId)
+      if (!entity) return null
+      const relationshipLabel = relationship.label || relationship.type || 'Connected'
+      return { ...entity, displayLabel: `${entity.name} · ${relationshipLabel.replace(/_/g, ' ')}` }
+    })
+    .filter(Boolean)
   const getSuspectEvidence = (entityId) => caseEvidence.filter(e => e.relatedEntityId === entityId)
   const getSuspectLocations = (entityId) => caseLocations.filter(l => l.entityId === entityId)
   const getSuspectTimeline = (entityId) => caseTimeline.filter(t => t.entityId === entityId).sort((a, b) => (b.date || '').localeCompare(a.date || ''))
@@ -171,17 +181,16 @@ export default function Suspects() {
 
             <section className="case-detail__section">
               <h4>Relationships</h4>
-              {getSuspectRels(selected.id).length === 0 ? (
-                <p className="empty-text">No relationships mapped yet.</p>
-              ) : (
-                <ul className="detail-list">
-                  {getSuspectRels(selected.id).map(r => {
-                    const otherId = r.fromId === selected.id ? r.toId : r.fromId
-                    const other = caseEntities.find(e => e.id === otherId)
-                    return <li key={r.id}>{other?.name || otherId} — {r.label || r.type}</li>
-                  })}
-                </ul>
-              )}
+              <EntityChipList
+                entities={getRelatedEntities(selected.id)}
+                maxVisible={5}
+                title="Related Suspects"
+                onSelect={(entity) => {
+                  setSelectedSuspectId(null)
+                  navigate('network', { suspectId: entity.id })
+                }}
+                emptyText="No relationships mapped yet."
+              />
             </section>
 
             <section className="case-detail__section">

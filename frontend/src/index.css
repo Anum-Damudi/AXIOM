@@ -1,38 +1,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* Tailwind v4 — theme + utilities only (preflight excluded so the legacy
+   AXIOM component styles in App.css remain authoritative). */
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities);
+
+/* ─── AXIOM design tokens ───────────────────────────────────
+   Palette: #004671 deep • #042A41 navy • #365C73 steel
+            #7298AF muted • #C2E8FF ice • #EAFFFF near-white
+   Used for: hierarchy, status, interaction, grouping, emphasis. */
+
 :root {
-  --bg-primary: #070b12;
-  --bg-secondary: #0c1018;
-  --bg-elevated: #111827;
-  --bg-card: #131a27;
-  --bg-card-hover: #172030;
+  --axiom-deep: #004671;
+  --axiom-navy: #042a41;
+  --axiom-steel: #365c73;
+  --axiom-muted: #7298af;
+  --axiom-ice: #c2e8ff;
+  --axiom-white: #eaffff;
 
-  --border-subtle: rgba(148, 163, 184, 0.08);
-  --border-default: rgba(148, 163, 184, 0.14);
-  --border-accent: rgba(34, 211, 238, 0.35);
+  --bg-primary: var(--axiom-navy);
+  --bg-secondary: var(--axiom-deep);
+  --bg-elevated: color-mix(in srgb, var(--axiom-navy) 88%, var(--axiom-ice));
+  --bg-card: color-mix(in srgb, var(--axiom-navy) 94%, var(--axiom-ice));
+  --bg-card-hover: color-mix(in srgb, var(--axiom-steel) 58%, var(--axiom-navy));
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --border-subtle: rgba(54, 92, 115, 0.18);
+  --border-default: rgba(54, 92, 115, 0.34);
+  --border-accent: rgba(114, 152, 175, 0.4);
 
-  --accent: #22d3ee;
-  --accent-dim: #0891b2;
-  --accent-glow: rgba(34, 211, 238, 0.15);
-  --accent-glow-strong: rgba(34, 211, 238, 0.28);
+  --text-primary: var(--axiom-white);
+  --text-secondary: var(--axiom-ice);
+  --text-muted: var(--axiom-muted);
 
-  --risk-high: #f87171;
-  --risk-high-bg: rgba(248, 113, 113, 0.12);
-  --risk-medium: #fbbf24;
-  --risk-medium-bg: rgba(251, 191, 36, 0.12);
-  --risk-low: #4ade80;
-  --risk-low-bg: rgba(74, 222, 128, 0.12);
+  --accent: var(--axiom-ice);
+  --accent-primary: var(--axiom-ice);
+  --accent-dim: var(--axiom-muted);
+  --border-color: var(--border-default);
+  --accent-glow: rgba(194, 232, 255, 0.1);
+  --accent-glow-strong: rgba(194, 232, 255, 0.18);
 
-  --success: #34d399;
-  --danger: #f87171;
-  --warning: #fbbf24;
+  --risk-high: #e8a09a;
+  --risk-high-bg: rgba(232, 160, 154, 0.14);
+  --risk-medium: #e3c07a;
+  --risk-medium-bg: rgba(227, 192, 122, 0.13);
+  --risk-low: #9cc4a8;
+  --risk-low-bg: rgba(156, 196, 168, 0.14);
+
+  --success: #8fbf9f;
+  --danger: #e8a09a;
+  --warning: #e3c07a;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 24px rgba(34, 211, 238, 0.08);
+  --shadow-glow: 0 0 24px rgba(114, 152, 175, 0.16);
 
   --sidebar-width: 260px;
   --header-height: 64px;
@@ -52,19 +71,19 @@
   --report-text-primary: #0f172a;
   --report-text-secondary: #334155;
   --report-text-muted: #64748b;
-  --report-heading: #0891b2;
-  --report-heading-rule: #0891b2;
-  --report-kpi-bg: #f0fdfa;
-  --report-kpi-border: #99f6e4;
+  --report-heading: #004671;
+  --report-heading-rule: #7298af;
+  --report-kpi-bg: #f0f6fa;
+  --report-kpi-border: #c2d6e5;
   --report-card-bg: #ffffff;
   --report-card-border: #e2e8f0;
-  --report-list-dot: #0891b2;
-  --report-numbered-bg: #ecfeff;
-  --report-numbered-text: #0891b2;
-  --report-connection-bg: #f0fdfa;
-  --report-connection-border: #99f6e4;
-  --report-classification-bg: #ecfeff;
-  --report-classification-border: #0891b2;
+  --report-list-dot: #365c73;
+  --report-numbered-bg: #eef5fa;
+  --report-numbered-text: #004671;
+  --report-connection-bg: #f0f6fa;
+  --report-connection-border: #c2d6e5;
+  --report-classification-bg: #eef5fa;
+  --report-classification-border: #365c73;
   --report-evidence-verified-bg: #dcfce7;
   --report-evidence-verified-text: #15803d;
   --report-evidence-pending-bg: #fef9c3;
@@ -72,9 +91,9 @@
   --report-evidence-archived-bg: #f1f5f9;
   --report-evidence-archived-text: #475569;
   --report-evidence-bar-bg: #e2e8f0;
-  --report-evidence-bar-fill: #0891b2;
-  --report-timeline-line: #0891b2;
-  --report-timeline-dot: #0891b2;
+  --report-evidence-bar-fill: #365c73;
+  --report-timeline-line: #365c73;
+  --report-timeline-dot: #365c73;
   --report-timeline-dot-border: #ffffff;
 
   font-family: var(--font-sans);
@@ -105,37 +124,39 @@ body {
   min-height: 100vh;
 }
 
-[data-theme="light"] {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #f1f5f9;
+[data-theme='light'] {
+  --bg-primary: #f4f8fb;
+  --bg-secondary: #edf3f8;
   --bg-elevated: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
+  --bg-card-hover: #e4eef6;
 
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-default: rgba(0, 0, 0, 0.12);
-  --border-accent: rgba(8, 145, 178, 0.4);
+  --border-subtle: rgba(54, 92, 115, 0.14);
+  --border-default: rgba(54, 92, 115, 0.22);
+  --border-accent: rgba(0, 70, 113, 0.35);
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #0b2231;
+  --text-secondary: #365c73;
+  --text-muted: #7298af;
 
-  --accent: #0891b2;
-  --accent-dim: #06b6d4;
-  --accent-glow: rgba(8, 145, 178, 0.1);
-  --accent-glow-strong: rgba(8, 145, 178, 0.18);
+  --accent: #004671;
+  --accent-dim: #0b5b93;
+  --accent-glow: rgba(0, 70, 113, 0.08);
+  --accent-glow-strong: rgba(0, 70, 113, 0.16);
 
-  --risk-high: #dc2626;
-  --risk-high-bg: rgba(220, 38, 38, 0.08);
-  --risk-medium: #d97706;
-  --risk-medium-bg: rgba(217, 119, 6, 0.08);
-  --risk-low: #16a34a;
-  --risk-low-bg: rgba(22, 163, 74, 0.08);
+  --risk-high: #c0564e;
+  --risk-high-bg: rgba(192, 86, 78, 0.08);
+  --risk-medium: #ab7c1c;
+  --risk-medium-bg: rgba(171, 124, 28, 0.08);
+  --risk-low: #2f7d50;
+  --risk-low-bg: rgba(47, 125, 80, 0.08);
 
-  --success: #059669;
+  --success: #2f7d50;
+  --warning: #ab7c1c;
+  --danger: #c0564e;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 24px rgba(8, 145, 178, 0.06);
+  --shadow-glow: 0 0 24px rgba(0, 70, 113, 0.08);
 
   /* Report stays the same in both themes — always a professional document appearance */
   --report-bg: #ffffff;
@@ -146,19 +167,19 @@ body {
   --report-text-primary: #0f172a;
   --report-text-secondary: #334155;
   --report-text-muted: #64748b;
-  --report-heading: #0891b2;
-  --report-heading-rule: #0891b2;
-  --report-kpi-bg: #f0fdfa;
-  --report-kpi-border: #99f6e4;
+  --report-heading: #004671;
+  --report-heading-rule: #7298af;
+  --report-kpi-bg: #f0f6fa;
+  --report-kpi-border: #c2d6e5;
   --report-card-bg: #ffffff;
   --report-card-border: #e2e8f0;
-  --report-list-dot: #0891b2;
-  --report-numbered-bg: #ecfeff;
-  --report-numbered-text: #0891b2;
-  --report-connection-bg: #f0fdfa;
-  --report-connection-border: #99f6e4;
-  --report-classification-bg: #ecfeff;
-  --report-classification-border: #0891b2;
+  --report-list-dot: #365c73;
+  --report-numbered-bg: #eef5fa;
+  --report-numbered-text: #004671;
+  --report-connection-bg: #f0f6fa;
+  --report-connection-border: #c2d6e5;
+  --report-classification-bg: #eef5fa;
+  --report-classification-border: #365c73;
   --report-evidence-verified-bg: #dcfce7;
   --report-evidence-verified-text: #15803d;
   --report-evidence-pending-bg: #fef9c3;
@@ -166,9 +187,9 @@ body {
   --report-evidence-archived-bg: #f1f5f9;
   --report-evidence-archived-text: #475569;
   --report-evidence-bar-bg: #e2e8f0;
-  --report-evidence-bar-fill: #0891b2;
-  --report-timeline-line: #0891b2;
-  --report-timeline-dot: #0891b2;
+  --report-evidence-bar-fill: #365c73;
+  --report-timeline-line: #365c73;
+  --report-timeline-dot: #365c73;
   --report-timeline-dot-border: #ffffff;
 }
 

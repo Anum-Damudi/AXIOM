@@ -4,6 +4,10 @@ import Icon from '../components/Icon'
 import Modal from '../components/Modal'
 import GoogleMapView from '../components/GoogleMapView'
 import GoogleMapsKeyModal from '../components/GoogleMapsKeyModal'
+import FormSection from '../components/forms/FormSection'
+import FormField from '../components/forms/FormField'
+import CheckboxGroup from '../components/forms/CheckboxGroup'
+import EntityChipList from '../components/entities/EntityChipList'
 import { getStoredGoogleMapsApiKey } from '../utils/googleMapsLoader'
 
 const LOCATION_TYPES = [
@@ -87,7 +91,7 @@ const EMPTY_FORM = {
 }
 
 export default function MapView() {
-  const { cases, entities, evidence, locations, selectedCaseId, setSelectedCaseId, addLocation, updateLocation, deleteLocation, navigate, showToast } = useApp()
+  const { cases, entities, evidence, locations, selectedCaseId, addLocation, updateLocation, deleteLocation, navigate, showToast } = useApp()
 
   const [mapFilterCase, setMapFilterCase] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -136,16 +140,19 @@ export default function MapView() {
 
   const pannedBounds = useMemo(() => {
     const base = computeBounds(filteredWithCoords)
-    if (mapPan.x === 0 && mapPan.y === 0) return base
-    const degX = (base.maxLng - base.minLng) / 200
-    const degY = (base.maxLat - base.minLat) / 200
+    const centerLat = (base.maxLat + base.minLat) / 2
+    const centerLng = (base.maxLng + base.minLng) / 2
+    const latSpan = (base.maxLat - base.minLat) / mapZoom
+    const lngSpan = (base.maxLng - base.minLng) / mapZoom
+    const panUnitY = latSpan / 200
+    const panUnitX = lngSpan / 200
     return {
-      minLat: base.minLat - mapPan.y * degY,
-      maxLat: base.maxLat - mapPan.y * degY,
-      minLng: base.minLng + mapPan.x * degX,
-      maxLng: base.maxLng + mapPan.x * degX,
+      minLat: centerLat - latSpan / 2 - mapPan.y * panUnitY,
+      maxLat: centerLat + latSpan / 2 - mapPan.y * panUnitY,
+      minLng: centerLng - lngSpan / 2 + mapPan.x * panUnitX,
+      maxLng: centerLng + lngSpan / 2 + mapPan.x * panUnitX,
     }
-  }, [filteredWithCoords, mapPan])
+  }, [filteredWithCoords, mapPan, mapZoom])
 
   const mappedLocations = useMemo(() => {
     return filteredWithCoords.map(loc => {
@@ -162,15 +169,20 @@ export default function MapView() {
   }), [filteredLocations, filteredWithCoords])
 
   useEffect(() => {
-    setMapPan({ x: 0, y: 0 })
-    setMapZoom(1)
+    const frame = window.requestAnimationFrame(() => {
+      setMapPan({ x: 0, y: 0 })
+      setMapZoom(1)
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [activeCaseId])
 
   useEffect(() => {
-    if (selectedLoc) {
+    if (!selectedLoc) return
+    const frame = window.requestAnimationFrame(() => {
       const stillExists = filteredLocations.find(l => l.id === selectedLoc.id)
       if (!stillExists) setSelectedLoc(null)
-    }
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [filteredLocations, selectedLoc])
 
   const caseEntities = useMemo(() => {
@@ -182,6 +194,13 @@ export default function MapView() {
     if (!activeCaseId) return []
     return evidence.filter(e => e.caseId === activeCaseId)
   }, [evidence, activeCaseId])
+
+  const selectedLocationEntities = useMemo(() => {
+    if (!selectedLoc) return []
+    return getRelatedEntityIds(selectedLoc)
+      .map(id => entities.find(entity => entity.id === id))
+      .filter(Boolean)
+  }, [selectedLoc, entities])
 
   const handleOpenAdd = useCallback(() => {
     if (!activeCaseId) {
@@ -418,11 +437,6 @@ export default function MapView() {
     setSelectedLoc(loc)
   }, [])
 
-  const getEntityName = useCallback((id) => {
-    const e = entities.find(ent => ent.id === id)
-    return e?.name || id
-  }, [entities])
-
   const getEvidenceTitle = useCallback((id) => {
     const e = evidence.find(ev => ev.id === id)
     return e?.title || id
@@ -543,21 +557,21 @@ export default function MapView() {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-card__icon" style={{ color: '#22c55e' }}><Icon name="check" className="icon-md" /></div>
+          <div className="stat-card__icon" style={{ color: 'var(--risk-low)' }}><Icon name="check" className="icon-md" /></div>
           <div className="stat-card__info">
             <span className="stat-card__value">{stats.withCoords}</span>
             <span className="stat-card__label">With Coordinates</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-card__icon" style={{ color: '#8b5cf6' }}><Icon name="network" className="icon-md" /></div>
+          <div className="stat-card__icon" style={{ color: 'var(--text-secondary)' }}><Icon name="network" className="icon-md" /></div>
           <div className="stat-card__info">
             <span className="stat-card__value">{stats.types}</span>
             <span className="stat-card__label">Location Types</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-card__icon" style={{ color: '#3b82f6' }}><Icon name="folder" className="icon-md" /></div>
+          <div className="stat-card__icon" style={{ color: 'var(--accent)' }}><Icon name="folder" className="icon-md" /></div>
           <div className="stat-card__info">
             <span className="stat-card__value">{stats.cases}</span>
             <span className="stat-card__label">Cases</span>
@@ -801,18 +815,13 @@ export default function MapView() {
               )}
               <div className="map-info__section">
                 <h4>Related Entities</h4>
-                {getRelatedEntityIds(selectedLoc).length > 0 ? (
-                  <div className="loc-info__tags">
-                    {getRelatedEntityIds(selectedLoc).map(eid => (
-                      <span key={eid} className="loc-info__tag loc-info__tag--entity">
-                        <Icon name="users" className="icon-xs" />
-                        {getEntityName(eid)}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="loc-info__empty">No related entities</p>
-                )}
+                <EntityChipList
+                  entities={selectedLocationEntities}
+                  maxVisible={5}
+                  title="Location Entities"
+                  onSelect={(entity) => navigate('network', { suspectId: entity.id })}
+                  emptyText="No related entities"
+                />
               </div>
               <div className="map-info__section">
                 <h4>Linked Evidence</h4>
@@ -858,180 +867,134 @@ export default function MapView() {
         footer={
           <div className="modal__footer">
             <button className="btn btn--ghost btn--sm" onClick={handleCloseForm}>Cancel</button>
-            <button className="btn btn--primary btn--sm" onClick={handleSave}>
+            <button type="submit" form="location-form" className="btn btn--primary btn--sm">
               {editingLoc ? 'Save Changes' : 'Save Location'}
             </button>
           </div>
         }
       >
-        <div className="loc-form">
-          <div className="loc-form__group">
-            <label className="loc-form__label">Location Name *</label>
-            <input
-              className={`loc-form__input ${formErrors.name ? 'loc-form__input--error' : ''}`}
-              type="text"
-              placeholder="e.g. Warehouse Alpha"
-              value={formData.name}
-              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            />
-            {formErrors.name && <span className="loc-form__error">{formErrors.name}</span>}
-          </div>
-
-          <div className="loc-form__row">
-            <div className="loc-form__group" style={{ flex: 1 }}>
-              <label className="loc-form__label">Location Type</label>
-              <select
-                className="loc-form__select"
-                value={formData.type}
-                onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
-              >
-                {LOCATION_TYPES.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            <div className="loc-form__group" style={{ flex: 1 }}>
-              <label className="loc-form__label">Associated Case *</label>
-              <select
-                className={`loc-form__select ${formErrors.caseId ? 'loc-form__input--error' : ''}`}
-                value={formData.caseId}
-                onChange={e => {
-                  const cid = e.target.value
-                  const c = cases.find(cs => cs.id === cid)
-                  setFormData(prev => ({ ...prev, caseId: cid, caseName: c?.title || '' }))
-                }}
-              >
-                <option value="">Select case...</option>
-                {cases.map(c => (
-                  <option key={c.id} value={c.id}>{c.id} — {c.title}</option>
-                ))}
-              </select>
-              {formErrors.caseId && <span className="loc-form__error">{formErrors.caseId}</span>}
-            </div>
-          </div>
-
-          <div className="loc-form__group">
-            <label className="loc-form__label">Description / Intelligence Notes</label>
-            <textarea
-              className="loc-form__textarea"
-              rows={3}
-              placeholder="Describe this location and its intelligence significance..."
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            />
-          </div>
-
-          <div className="loc-form__divider" />
-
-          <h4 className="loc-form__section-title">GPS / Map Location</h4>
-
-          <div className="loc-form__row">
-            <div className="loc-form__group" style={{ flex: 1 }}>
-              <label className="loc-form__label">Latitude *</label>
+        <form
+          id="location-form"
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSave()
+          }}
+        >
+          <FormSection title="Location Information" subtitle="Identify the location and its case context">
+            <FormField label="Location Name" required error={formErrors.name}>
               <input
-                className={`loc-form__input ${formErrors.latitude ? 'loc-form__input--error' : ''}`}
-                type="number"
-                step="0.000001"
-                min="-90"
-                max="90"
-                placeholder="e.g. 19.0760"
-                value={formData.latitude}
-                onChange={e => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
+                type="text"
+                placeholder="e.g. Warehouse Alpha"
+                value={formData.name}
+                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
               />
-              {formErrors.latitude && <span className="loc-form__error">{formErrors.latitude}</span>}
+            </FormField>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="Location Type">
+                <select value={formData.type} onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}>
+                  {LOCATION_TYPES.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Associated Case" required error={formErrors.caseId}>
+                <select
+                  value={formData.caseId}
+                  onChange={e => {
+                    const cid = e.target.value
+                    const c = cases.find(cs => cs.id === cid)
+                    setFormData(prev => ({ ...prev, caseId: cid, caseName: c?.title || '' }))
+                  }}
+                >
+                  <option value="">Select case...</option>
+                  {cases.map(c => (
+                    <option key={c.id} value={c.id}>{c.id} — {c.title}</option>
+                  ))}
+                </select>
+              </FormField>
             </div>
-            <div className="loc-form__group" style={{ flex: 1 }}>
-              <label className="loc-form__label">Longitude *</label>
+            <FormField label="Description / Intelligence Notes" full>
+              <textarea
+                rows={3}
+                placeholder="Describe this location and its intelligence significance..."
+                value={formData.description}
+                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Map Coordinates" subtitle="Record the precise position and searchable address">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="Latitude" required error={formErrors.latitude}>
+                <input
+                  type="number"
+                  step="0.000001"
+                  min="-90"
+                  max="90"
+                  placeholder="e.g. 19.0760"
+                  value={formData.latitude}
+                  onChange={e => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
+                />
+              </FormField>
+              <FormField label="Longitude" required error={formErrors.longitude}>
+                <input
+                  type="number"
+                  step="0.000001"
+                  min="-180"
+                  max="180"
+                  placeholder="e.g. 72.8777"
+                  value={formData.longitude}
+                  onChange={e => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
+                />
+              </FormField>
+            </div>
+            <FormField label="Address / Location Description" hint="Search with Google Places or enter a custom address">
               <input
-                className={`loc-form__input ${formErrors.longitude ? 'loc-form__input--error' : ''}`}
-                type="number"
-                step="0.000001"
-                min="-180"
-                max="180"
-                placeholder="e.g. 72.8777"
-                value={formData.longitude}
-                onChange={e => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
+                ref={addressInputRef}
+                type="text"
+                placeholder="Search place or enter custom address..."
+                value={formData.address}
+                onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
               />
-              {formErrors.longitude && <span className="loc-form__error">{formErrors.longitude}</span>}
-            </div>
-          </div>
+            </FormField>
+            <button className="btn btn--ghost btn--sm self-start" type="button" onClick={handleStartMapSelect}>
+              <Icon name="map" className="icon-xs" /> Select on Map
+            </button>
+            {previewCoords && (
+              <div className="loc-form__preview">
+                <Icon name="check" className="icon-xs" style={{ color: 'var(--risk-low)' }} />
+                <span>Selected: {previewCoords.lat.toFixed(6)}, {previewCoords.lng.toFixed(6)}</span>
+                <button type="button" className="btn btn--ghost btn--xs" onClick={() => { setPreviewCoords(null); setFormData(prev => ({ ...prev, latitude: '', longitude: '' })) }}>
+                  Clear
+                </button>
+              </div>
+            )}
+          </FormSection>
 
-          <div className="loc-form__group">
-            <label className="loc-form__label">Address / Location Description (Google Places Search)</label>
-            <input
-              ref={addressInputRef}
-              className="loc-form__input"
-              type="text"
-              placeholder="Search place with Google Places or enter custom address..."
-              value={formData.address}
-              onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
-            />
-            <span className="loc-form__hint">Search places via Google Places Autocomplete or click 'Select on Map' below</span>
-          </div>
-
-          <button
-            className="btn btn--ghost btn--sm"
-            type="button"
-            onClick={handleStartMapSelect}
-            style={{ alignSelf: 'flex-start', marginBottom: 12 }}
-          >
-            <Icon name="map" className="icon-xs" /> Select on Map
-          </button>
-
-          {previewCoords && (
-            <div className="loc-form__preview">
-              <Icon name="check" className="icon-xs" style={{ color: '#22c55e' }} />
-              <span>Selected: {previewCoords.lat.toFixed(6)}, {previewCoords.lng.toFixed(6)}</span>
-              <button className="btn btn--ghost btn--xs" onClick={() => { setPreviewCoords(null); setFormData(prev => ({ ...prev, latitude: '', longitude: '' })) }}>
-                Clear
-              </button>
-            </div>
-          )}
-
-          <div className="loc-form__divider" />
-
-          <h4 className="loc-form__section-title">Related Entities</h4>
-          {caseEntities.length > 0 ? (
-            <div className="loc-form__checkbox-list">
-              {caseEntities.map(ent => (
-                <label key={ent.id} className="loc-form__checkbox">
-                  <input
-                    type="checkbox"
-                    checked={formData.relatedEntityIds.includes(ent.id)}
-                    onChange={() => toggleRelatedEntity(ent.id)}
-                  />
-                  <span className="loc-form__checkbox-label">
-                    <span className="loc-form__checkbox-name">{ent.name}</span>
-                    <span className="loc-form__checkbox-type">{ent.type}{ent.role ? ` — ${ent.role}` : ''}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <p className="loc-info__empty">No entities in this case</p>
-          )}
-
-          <h4 className="loc-form__section-title" style={{ marginTop: 12 }}>Related Evidence</h4>
-          {caseEvidence.length > 0 ? (
-            <div className="loc-form__checkbox-list">
-              {caseEvidence.map(ev => (
-                <label key={ev.id} className="loc-form__checkbox">
-                  <input
-                    type="checkbox"
-                    checked={formData.relatedEvidenceIds.includes(ev.id)}
-                    onChange={() => toggleRelatedEvidence(ev.id)}
-                  />
-                  <span className="loc-form__checkbox-label">
-                    <span className="loc-form__checkbox-name">{ev.title}</span>
-                    <span className="loc-form__checkbox-type">{ev.type}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <p className="loc-info__empty">No evidence in this case</p>
-          )}
-        </div>
+          <FormSection title="Related Intelligence" subtitle="Associate entities and evidence with this location">
+            {caseEntities.length > 0 ? (
+              <CheckboxGroup
+                items={caseEntities}
+                selected={formData.relatedEntityIds}
+                onToggle={toggleRelatedEntity}
+                title="Related Entities"
+              />
+            ) : (
+              <p className="loc-info__empty">No entities in this case</p>
+            )}
+            {caseEvidence.length > 0 ? (
+              <CheckboxGroup
+                items={caseEvidence.map(item => ({ ...item, name: item.title || item.id }))}
+                selected={formData.relatedEvidenceIds}
+                onToggle={toggleRelatedEvidence}
+                title="Related Evidence"
+              />
+            ) : (
+              <p className="loc-info__empty">No evidence in this case</p>
+            )}
+          </FormSection>
+        </form>
       </Modal>
 
       <Modal

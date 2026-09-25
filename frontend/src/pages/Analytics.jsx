@@ -1,13 +1,14 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import MetricGrid from '../components/ui/MetricGrid'
 
 const TYPE_COLORS = {
-  PERSON: '#0891b2', ORGANIZATION: '#7c3aed', PHONE: '#059669',
-  VEHICLE: '#d97706', LOCATION: '#dc2626', BANK: '#2563eb',
+  PERSON: '#c2e8ff', ORGANIZATION: '#8598b8', PHONE: '#9cc4a8',
+  VEHICLE: '#d9a06a', LOCATION: '#e8a09a', BANK: '#7298af',
   OTHER: '#64748b',
 }
 const RISK_COLORS = {
-  CRITICAL: '#dc2626', HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#22c55e',
+  CRITICAL: '#e8a09a', HIGH: '#e0a58f', MEDIUM: '#e3c07a', LOW: '#9cc4a8',
 }
 
 export default function Analytics() {
@@ -127,36 +128,15 @@ export default function Analytics() {
         </div>
       </header>
 
-      <section className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-card__info">
-            <span className="stat-card__value">{caseEntities.length}</span>
-            <span className="stat-card__label">Entities</span>
-            <span className="stat-card__change">{caseEntities.filter(e => (e.risk === 'HIGH' || e.risk === 'CRITICAL')).length} high risk</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card__info">
-            <span className="stat-card__value">{caseRels.length}</span>
-            <span className="stat-card__label">Relationships</span>
-            <span className="stat-card__change">{netStats.avgConn} avg connections</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card__info">
-            <span className="stat-card__value">{caseIntel.length}</span>
-            <span className="stat-card__label">Intelligence Items</span>
-            <span className="stat-card__change">{new Set(caseIntel.map(i => i.source)).size} sources</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card__info">
-            <span className="stat-card__value">{caseAi.length}</span>
-            <span className="stat-card__label">AI Suggestions</span>
-            <span className="stat-card__change">{caseAi.filter(a => a.status === 'ACCEPTED').length} accepted</span>
-          </div>
-        </div>
-      </section>
+      <MetricGrid
+        ariaLabel="Investigation analytics"
+        items={[
+          { id: 'entities', label: 'Entities', value: caseEntities.length, change: `${caseEntities.filter(e => e.risk === 'HIGH' || e.risk === 'CRITICAL').length} high risk`, icon: 'users' },
+          { id: 'relationships', label: 'Relationships', value: caseRels.length, change: `${netStats.avgConn} avg connections`, icon: 'link' },
+          { id: 'intelligence', label: 'Intelligence Items', value: caseIntel.length, change: `${new Set(caseIntel.map(i => i.source)).size} sources`, icon: 'shield' },
+          { id: 'suggestions', label: 'AI Suggestions', value: caseAi.length, change: `${caseAi.filter(a => a.status === 'ACCEPTED').length} accepted`, icon: 'ai' },
+        ]}
+      />
 
       <div className="analytics-grid">
         <section className="panel analytics-chart">
@@ -267,12 +247,16 @@ export default function Analytics() {
             <h3 className="panel__title">Network Statistics</h3>
           </header>
           <div className="chart-area">
-            <div className="stats-grid">
-              <div className="stat-card"><div className="stat-card__info"><span className="stat-card__value">{netStats.totalNodes}</span><span className="stat-card__label">Total Nodes</span></div></div>
-              <div className="stat-card"><div className="stat-card__info"><span className="stat-card__value">{netStats.totalEdges}</span><span className="stat-card__label">Total Edges</span></div></div>
-              <div className="stat-card"><div className="stat-card__info"><span className="stat-card__value">{netStats.density}</span><span className="stat-card__label">Density</span></div></div>
-              <div className="stat-card"><div className="stat-card__info"><span className="stat-card__value">{netStats.avgConn}</span><span className="stat-card__label">Avg Connections</span></div></div>
-            </div>
+            <MetricGrid
+              minWidth="8rem"
+              ariaLabel="Network statistics"
+              items={[
+                { id: 'nodes', label: 'Total Nodes', value: netStats.totalNodes },
+                { id: 'edges', label: 'Total Edges', value: netStats.totalEdges },
+                { id: 'density', label: 'Density', value: netStats.density },
+                { id: 'average', label: 'Avg Connections', value: netStats.avgConn },
+              ]}
+            />
           </div>
         </section>
       </div>

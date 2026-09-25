@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { exportReportPdf, downloadPdf } from '../utils/exportPdf'
+import EntityChipList from '../components/entities/EntityChipList'
+import Badge from '../components/ui/Badge'
 
 function buildReportData(activeCase, entities, relationships, intelligence, evidence, aiSuggestions, timeline) {
   const now = new Date()
@@ -199,8 +201,8 @@ export default function Reports() {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #334155)' }}>
                 <strong>Total:</strong> {caseSuspects.length} suspect{caseSuspects.length !== 1 ? 's' : ''} identified
                 {caseSuspects.length > 0 && (
-                  <div style={{ marginTop: '0.25rem' }}>
-                    {caseSuspects.map(s => s.name).join(', ')}
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <EntityChipList entities={caseSuspects} maxVisible={4} title="Case Suspects" />
                   </div>
                 )}
               </div>
@@ -211,8 +213,10 @@ export default function Reports() {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #334155)' }}>
                 <strong>Total:</strong> {caseEvidence.length} evidence item{caseEvidence.length !== 1 ? 's' : ''}
                 {caseEvidence.length > 0 && (
-                  <div style={{ marginTop: '0.25rem' }}>
-                    <strong>Types:</strong> {[...new Set(caseEvidence.map(e => e.type))].join(', ')}
+                  <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {[...new Set(caseEvidence.map(e => e.type))].map(t => (
+                      <Badge key={t}>{t}</Badge>
+                    ))}
                   </div>
                 )}
               </div>
@@ -223,8 +227,12 @@ export default function Reports() {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #334155)' }}>
                 <div><strong>Total:</strong> {caseEntities.length} entities</div>
                 {entityTypeBreakdown.length > 0 && (
-                  <div style={{ marginTop: '0.25rem' }}>
-                    <strong>By type:</strong> {entityTypeBreakdown.map(([t, c]) => `${t} (${c})`).join(', ')}
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                      {entityTypeBreakdown.map(([t, c]) => (
+                        <Badge key={t}>{t} ({c})</Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

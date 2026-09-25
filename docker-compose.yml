@@ -45,6 +45,20 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: password
       SECRET_KEY: axiom_nexus_crime_hackathon_super_secret_jwt_key_2026
+      # Ledger / Blockchain
+      ANCHOR_MODE: noop
+      EVM_RPC_URL: ""
+      EVM_CONTRACT_ADDRESS: ""
+      EVM_PRIVATE_KEY: ""
+      ENABLE_DEMO_TAMPER: "false"
+      LEDGER_SEAL_THRESHOLD: "10"
+      LEDGER_SEAL_INTERVAL_SECONDS: "300"
+      # Phone Intelligence
+      CDR_DEFAULT_REGION: "IN"
+      CDR_MAX_ROWS: "10000"
+      PERCEPTUAL_HASH_THRESHOLD: "5"
+      # Storage
+      STORAGE_BACKEND: "local"
     ports:
       - "8000:8000"
     depends_on:

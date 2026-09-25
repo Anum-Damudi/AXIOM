@@ -1,29 +1,61 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import {
-  INITIAL_NOTIFICATIONS,
-  INVESTIGATIONS as INITIAL_INVESTIGATIONS,
-} from '../data/mockData'
+import { INITIAL_NOTIFICATIONS, INVESTIGATIONS as INITIAL_INVESTIGATIONS } from '../data/mockData'
 import { buildDemoData } from '../data/demoCase'
 import { getNavByRole } from '../data/users'
 import {
-  loadInvestigations, loadSettings, saveInvestigations, saveSettings,
-  loadSession, saveSession,
-  loadCases, saveCases, loadEntities, saveEntities,
-  loadRelationships, saveRelationships,
-  loadIntelligence, saveIntelligence,
-  loadAISuggestions, saveAISuggestions,
-  loadCaseAnalysisSuggestions, saveCaseAnalysisSuggestions,
-  loadDeniedCaseConnections, saveDeniedCaseConnections,
-  loadAcceptedCaseConnections, saveAcceptedCaseConnections,
-  loadTimeline, saveTimeline,
-  loadLocations, saveLocations,
-  loadEvidence, saveEvidence,
+  loadInvestigations,
+  loadSettings,
+  saveInvestigations,
+  saveSettings,
+  loadSession,
+  saveSession,
+  loadCases,
+  saveCases,
+  loadEntities,
+  saveEntities,
+  loadRelationships,
+  saveRelationships,
+  loadIntelligence,
+  saveIntelligence,
+  loadAISuggestions,
+  saveAISuggestions,
+  loadCaseAnalysisSuggestions,
+  saveCaseAnalysisSuggestions,
+  loadDeniedCaseConnections,
+  saveDeniedCaseConnections,
+  loadAcceptedCaseConnections,
+  saveAcceptedCaseConnections,
+  loadTimeline,
+  saveTimeline,
+  loadLocations,
+  saveLocations,
+  loadEvidence,
+  saveEvidence,
 } from '../utils/storage'
 import { buildCaseAnalysisSuggestions } from '../utils/caseAnalysis'
 import { analyzeCase, simulateAnalysisProgress } from '../services/aiAnalysisService'
-
+import { login as apiLogin } from '../services/authService'
+import { API_BASE } from '../services/authService'
 const AppContext = createContext(null)
-
+const ROLE_META = {
+  ADMIN: { roleKey: 'admin', roleLabel: 'Administrator' },
+  INVESTIGATOR: { roleKey: 'investigator', roleLabel: 'Investigator' },
+  OFFICER: { roleKey: 'officer', roleLabel: 'Officer' },
+}
+function enrichUser(user) {
+  const meta = ROLE_META[String(user.role || '').toUpperCase()] || ROLE_META.INVESTIGATOR
+  return {
+    id: user.id,
+    name: user.displayName || user.name || user.full_name || user.username || user.email,
+    email: user.email,
+    username: user.username,
+    role: meta.roleLabel,
+    roleKey: meta.roleKey,
+    roleLabel: meta.roleLabel,
+    initials: (user.name || user.username || user.email || 'U').slice(0, 2).toUpperCase(),
+    is_admin: String(user.role || '').toUpperCase() === 'ADMIN',
+  }
+}
 function buildInitialData() {
   const demo = buildDemoData()
   const savedCases = loadCases()
@@ -56,9 +88,11 @@ function buildInitialData() {
     locations: demo.locations,
   }
 }
-
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(() => { const s = loadSession(); return s?.user || null })
+  const [user, setUser] = useState(() => {
+    const s = loadSession()
+    return s?.user || null
+  })
   const [page, setPage] = useState('landing')
   const [activeView, setActiveView] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -68,7 +102,6 @@ export function AppProvider({ children }) {
   const [profileOpen, setProfileOpen] = useState(false)
   const [investigationModalOpen, setInvestigationModalOpen] = useState(false)
   const [startInvestigationOnNetwork, setStartInvestigationOnNetwork] = useState(false)
-
   const initialData = useMemo(() => buildInitialData(), [])
   const [cases, setCases] = useState(initialData.cases)
   const [entities, setEntities] = useState(initialData.entities)
@@ -81,7 +114,6 @@ export function AppProvider({ children }) {
   const [timeline, setTimeline] = useState(initialData.timeline)
   const [locations, setLocations] = useState(initialData.locations)
   const [evidence, setEvidence] = useState(initialData.evidence)
-
   const [investigations, setInvestigations] = useState(() => {
     const loaded = loadInvestigations()
     return loaded.length > 0 ? loaded : INITIAL_INVESTIGATIONS
@@ -91,7 +123,6 @@ export function AppProvider({ children }) {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const [toasts, setToasts] = useState([])
   const [settings, setSettings] = useState(loadSettings)
-
   const [caseFilter, setCaseFilter] = useState('')
   const [caseHighRiskOnly, setCaseHighRiskOnly] = useState(false)
   const [selectedCaseId, setSelectedCaseId] = useState(null)
@@ -99,485 +130,981 @@ export function AppProvider({ children }) {
   const [selectedEvidenceId, setSelectedEvidenceId] = useState(null)
   const [networkFocusEntity, setNetworkFocusEntity] = useState(null)
   const [selectedNetworkNode, setSelectedNetworkNode] = useState(null)
-
   const [newCaseModalOpen, setNewCaseModalOpen] = useState(false)
   const [linkEvidenceModalOpen, setLinkEvidenceModalOpen] = useState(false)
   const [linkEvidenceId, setLinkEvidenceId] = useState(null)
   const [addEntityModalOpen, setAddEntityModalOpen] = useState(false)
   const [addRelationshipModalOpen, setAddRelationshipModalOpen] = useState(false)
-
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState('')
-
-  const navItems = useMemo(() => getNavByRole(), [])
-
-  useEffect(() => { saveCases(cases) }, [cases])
-  useEffect(() => { saveEntities(entities) }, [entities])
-  useEffect(() => { saveRelationships(relationships) }, [relationships])
-  useEffect(() => { saveIntelligence(intelligence) }, [intelligence])
-  useEffect(() => { saveAISuggestions(aiSuggestions) }, [aiSuggestions])
-  useEffect(() => { saveCaseAnalysisSuggestions(caseAnalysisSuggestions) }, [caseAnalysisSuggestions])
-  useEffect(() => { saveAcceptedCaseConnections(acceptedCaseConnections) }, [acceptedCaseConnections])
-  useEffect(() => { saveDeniedCaseConnections(deniedCaseConnections) }, [deniedCaseConnections])
-  useEffect(() => { saveTimeline(timeline) }, [timeline])
-  useEffect(() => { saveLocations(locations) }, [locations])
-  useEffect(() => { saveEvidence(evidence) }, [evidence])
-
-  const login = useCallback(async (name, email) => {
-    const enrichedUser = { name: name || email.split('@')[0], email, role: 'investigator', roleKey: 'investigator', roleLabel: 'Investigator' }
-    setUser(enrichedUser)
-    saveSession({ user: enrichedUser, token: 'demo-token' })
-    setPage('dashboard')
-    if (cases.length > 0 && !selectedCaseId) {
-      setSelectedCaseId(cases[0].id)
-      setActiveCaseId(cases[0].id)
-    }
-    return { user: enrichedUser }
-  }, [cases, selectedCaseId])
-
+  const navItems = useMemo(() => getNavByRole(user?.roleKey), [user?.roleKey])
+  useEffect(() => {
+    saveCases(cases)
+  }, [cases])
+  useEffect(() => {
+    saveEntities(entities)
+  }, [entities])
+  useEffect(() => {
+    saveRelationships(relationships)
+  }, [relationships])
+  useEffect(() => {
+    saveIntelligence(intelligence)
+  }, [intelligence])
+  useEffect(() => {
+    saveAISuggestions(aiSuggestions)
+  }, [aiSuggestions])
+  useEffect(() => {
+    saveCaseAnalysisSuggestions(caseAnalysisSuggestions)
+  }, [caseAnalysisSuggestions])
+  useEffect(() => {
+    saveAcceptedCaseConnections(acceptedCaseConnections)
+  }, [acceptedCaseConnections])
+  useEffect(() => {
+    saveDeniedCaseConnections(deniedCaseConnections)
+  }, [deniedCaseConnections])
+  useEffect(() => {
+    saveTimeline(timeline)
+  }, [timeline])
+  useEffect(() => {
+    saveLocations(locations)
+  }, [locations])
+  useEffect(() => {
+    saveEvidence(evidence)
+  }, [evidence])
+  const login = useCallback(
+    async (identifier, password) => {
+      const { token, user } = await apiLogin(identifier.trim(), password)
+      const enrichedUser = enrichUser(user)
+      setUser(enrichedUser)
+      saveSession({ user: enrichedUser, token })
+      setPage('dashboard')
+      if (cases.length > 0 && !selectedCaseId) {
+        setSelectedCaseId(cases[0].id)
+        setActiveCaseId(cases[0].id)
+      }
+      return { user: enrichedUser }
+    },
+    [cases, selectedCaseId],
+  )
   const logout = useCallback(() => {
-    setUser(null); saveSession(null); setPage('landing'); setActiveView('dashboard')
-    setProfileOpen(false); setSelectedCaseId(null); setSelectedSuspectId(null)
-    setSelectedEvidenceId(null); setSelectedNetworkNode(null)
-    setActiveInvestigation(null); setActiveCaseId(null)
-    setNotificationsOpen(false); setSearchOpen(false)
+    setUser(null)
+    saveSession(null)
+    setPage('landing')
+    setActiveView('dashboard')
+    setProfileOpen(false)
+    setSelectedCaseId(null)
+    setSelectedSuspectId(null)
+    setSelectedEvidenceId(null)
+    setSelectedNetworkNode(null)
+    setActiveInvestigation(null)
+    setActiveCaseId(null)
+    setNotificationsOpen(false)
+    setSearchOpen(false)
   }, [])
-
-  const navigateTo = useCallback((targetPage) => { setPage(targetPage) }, [])
-
-  const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications])
-
+  const navigateTo = useCallback((targetPage) => {
+    setPage(targetPage)
+  }, [])
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications])
   const showToast = useCallback((message, type = 'success') => {
     const id = `toast-${Date.now()}`
-    setToasts(prev => [...prev, { id, message, type }])
-    setTimeout(() => { setToasts(prev => prev.filter(t => t.id !== id)) }, 3500)
+    setToasts((prev) => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 3500)
   }, [])
-
-  const syncWithBackend = useCallback(async (path, method = 'GET', payload = null) => {
-    let token = loadSession()?.token
-    if (!token || token === 'demo-token') {
-      try {
-        const authResp = await fetch('http://localhost:8000/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: 'admin', password: 'admin123' }),
-        })
-        const authData = await authResp.json()
-        token = authData?.data?.access_token || null
-      } catch (e) {
-        return null
-      }
+  const syncWithBackend = useCallback(async (path, method = 'GET', payload = null, isFormData = false) => {
+    let session = loadSession()
+    let token = session?.token
+    if (!token) {
+      return { success: false, error: 'Authentication required. Please sign in again.' }
     }
-
-    if (!token) return null
-
     try {
-      const response = await fetch(`http://localhost:8000/api/v1${path}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: payload ? JSON.stringify(payload) : undefined,
-      })
-      if (!response.ok) return null
-      return await response.json()
-    } catch (e) {
-      return null
-    }
-  }, [])
-
-  const navigate = useCallback((view, options = {}) => {
-    setActiveView(view); setSidebarOpen(false); setSearchOpen(false); setProfileOpen(false)
-    if (options.filter === 'highRisk') { setCaseHighRiskOnly(true); setCaseFilter('') }
-    else if (view !== 'cases') { setCaseHighRiskOnly(false) }
-    if (options.caseId) { setSelectedCaseId(options.caseId); setActiveCaseId(options.caseId) }
-    if (options.suspectId) { setSelectedSuspectId(options.suspectId); if (view === 'network') setNetworkFocusEntity(options.suspectId) }
-    if (options.evidenceId) { setSelectedEvidenceId(options.evidenceId) }
-    if (options.openInvestigation) { setStartInvestigationOnNetwork(true) }
-    if (options.networkNode) { setSelectedNetworkNode(options.networkNode) }
-  }, [])
-
-  const openStartInvestigation = useCallback(() => { setInvestigationModalOpen(true) }, [])
-
-  const createInvestigation = useCallback((data) => {
-    const inv = { id: `INV-${Date.now()}`, ...data, createdAt: new Date().toISOString() }
-    const updated = [inv, ...investigations]
-    setInvestigations(updated); saveInvestigations(updated)
-    setActiveInvestigation(inv); setInvestigationModalOpen(false)
-    setStartInvestigationOnNetwork(true); navigate('network')
-    showToast(`Investigation "${data.name}" created successfully`)
-  }, [investigations, navigate, showToast])
-
-  const addCase = useCallback(async (data) => {
-    const id = data.id || `NX-2026-${String(Math.floor(Math.random() * 900) + 100)}`
-    const newCase = {
-      id, title: data.title, type: data.type || 'Other', priority: data.priority || 'MEDIUM',
-      status: 'Active', leadInvestigator: user?.name || 'Unassigned', entities: 0,
-      lastUpdated: new Date().toISOString().slice(0, 10),
-      risk: data.priority === 'CRITICAL' || data.priority === 'HIGH' ? 'HIGH' : (data.priority || 'MEDIUM'),
-      description: data.description || '', location: data.location || '',
-      date: data.date || new Date().toISOString().slice(0, 10),
-      persons: [], evidence: [],
-      timeline: [{ date: new Date().toISOString().slice(0, 10), event: 'Case opened', type: 'CASE_EVENT' }],
-    }
-    setCases(prev => [newCase, ...prev])
-    setNewCaseModalOpen(false)
-    showToast(`Case "${newCase.title}" created`)
-    setSelectedCaseId(newCase.id); setActiveCaseId(newCase.id)
-    setActiveInvestigation({ id: `INV-${Date.now()}`, name: newCase.title, caseId: newCase.id, priority: newCase.priority, type: newCase.type, status: 'Active', createdAt: new Date().toISOString() })
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: newCase.id, date: new Date().toISOString().slice(0, 10),
-      event: 'Case opened', type: 'CASE_EVENT', createdAt: new Date().toISOString(),
-    }
-    setTimeline(prev => [tlEntry, ...prev])
-
-    const backendCase = await syncWithBackend('/cases', 'POST', {
-      title: newCase.title,
-      date: newCase.date,
-      status: 'open',
-      priority: String(newCase.priority).toLowerCase(),
-      case_type: newCase.type || 'Criminal Investigation',
-      investigating_officer: newCase.leadInvestigator || 'Officer Inspector',
-    })
-
-    if (backendCase?.data?.id) {
-      setCases(prev => prev.map(c => c.id === newCase.id ? { ...c, backendCaseId: backendCase.data.id } : c))
-    }
-
-    return newCase
-  }, [showToast, syncWithBackend, user])
-
-  const updateCaseStatus = useCallback((caseId, status) => {
-    setCases(prev => prev.map(c => c.id === caseId ? { ...c, status, lastUpdated: new Date().toISOString().slice(0, 10) } : c))
-    showToast(`Case status updated to ${status}`)
-  }, [showToast])
-
-  const addEntity = useCallback(async (data) => {
-    const entity = {
-      id: data.id || `ENT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      caseId: data.caseId, type: data.type, name: data.name, risk: data.risk || 'LOW',
-      role: data.role || '', description: data.description || '', data: data.data || {},
-      createdAt: new Date().toISOString(),
-    }
-    setEntities(prev => [...prev, entity])
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: data.caseId, date: new Date().toISOString().slice(0, 10),
-      event: `Entity added: ${entity.name} (${entity.type})`, type: 'ENTITY_ADDED',
-      entityId: entity.id, createdAt: new Date().toISOString(),
-    }
-    setTimeline(prev => [tlEntry, ...prev])
-    showToast(`Entity "${entity.name}" added`)
-
-    const caseRecord = cases.find(c => c.id === data.caseId)
-    const backendCaseId = caseRecord?.backendCaseId || data.caseId
-    if (backendCaseId) {
-      const requestType = String(data.type || 'person').toLowerCase()
-      const backendPayload = {
-        type: requestType,
-        name: data.name,
-        role: data.role || 'associate',
-        age: data.age || null,
-        plate_number: data.plateNumber || data.plate_number || null,
+      const headers = {
+        Authorization: `Bearer ${token}`,
       }
-      await syncWithBackend(`/cases/${backendCaseId}/entities`, 'POST', backendPayload)
+      if (!isFormData) {
+        headers['Content-Type'] = 'application/json'
+      }
+      const response = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers,
+        body: isFormData ? payload : payload ? JSON.stringify(payload) : undefined,
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        const errMsg = data?.detail || data?.message || data?.error || `Request failed with status ${response.status}`
+        console.error(`Backend request failed: ${method} ${path}`, { status: response.status, error: errMsg, data })
+        if (response.status === 401) {
+          saveSession(null)
+          setUser(null)
+        }
+        return { success: false, error: errMsg, data: null }
+      }
+      return data
+    } catch (e) {
+      console.error('Network connection failed:', e)
+      return { success: false, error: 'Network connection failed. Please ensure the backend is running.', data: null }
     }
-
-    return entity
-  }, [cases, showToast, syncWithBackend])
-
-  const addRelationship = useCallback((data) => {
-    if (data.fromId === data.toId) { showToast('Cannot create self-relationship', 'error'); return null }
-    const fromEntity = entities.find(e => e.id === data.fromId)
-    const toEntity = entities.find(e => e.id === data.toId)
-    const rel = {
-      id: data.id || `REL-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      caseId: data.caseId, fromId: data.fromId, toId: data.toId,
-      type: data.type || 'CONNECTED_TO', label: data.label || '',
-      status: 'MANUAL', createdAt: new Date().toISOString(),
+  }, [])
+  const uploadUrl = useCallback((path) => {
+    if (!path) return null
+    return path.startsWith('/')
+      ? `${API_BASE.replace(/\/api\/v1$/, '')}${path}`
+      : `${API_BASE.replace(/\/api\/v1$/, '')}/uploads/${path}`
+  }, [])
+  const navigate = useCallback((view, options = {}) => {
+    setActiveView(view)
+    setSidebarOpen(false)
+    setSearchOpen(false)
+    setProfileOpen(false)
+    if (options.filter === 'highRisk') {
+      setCaseHighRiskOnly(true)
+      setCaseFilter('')
+    } else if (view !== 'cases') {
+      setCaseHighRiskOnly(false)
     }
-    setRelationships(prev => [...prev, rel])
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: data.caseId, date: new Date().toISOString().slice(0, 10),
-      event: `Relationship added: ${fromEntity?.name || data.fromId} → ${toEntity?.name || data.toId}`,
-      type: 'RELATIONSHIP_CONFIRMED', createdAt: new Date().toISOString(),
+    if (options.caseId) {
+      setSelectedCaseId(options.caseId)
+      setActiveCaseId(options.caseId)
     }
-    setTimeline(prev => [tlEntry, ...prev])
-    showToast('Relationship added')
-    return rel
-  }, [entities, showToast])
-
-  const addIntelligence = useCallback((data) => {
-    const item = {
-      id: `INT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      caseId: data.caseId, text: data.text || data.description || '',
-      source: data.source || 'Field Report',
-      date: data.date || new Date().toISOString().slice(0, 10),
-      relatedEntityIds: data.relatedEntityIds || data.entityIds || [],
-      createdAt: new Date().toISOString(),
+    if (options.suspectId) {
+      setSelectedSuspectId(options.suspectId)
+      if (view === 'network') setNetworkFocusEntity(options.suspectId)
     }
-    setIntelligence(prev => [item, ...prev])
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: data.caseId, date: item.date,
-      event: `Intelligence added: ${(item.text || '').slice(0, 60)}...`, type: 'INTELLIGENCE_ADDED',
-      createdAt: new Date().toISOString(),
+    if (options.evidenceId) {
+      setSelectedEvidenceId(options.evidenceId)
     }
-    setTimeline(prev => [tlEntry, ...prev])
-    showToast('Intelligence added')
-    return item
-  }, [showToast])
-
-  const addLocation = useCallback((data) => {
-    const loc = {
-      id: data.id || `LOC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      caseId: data.caseId,
-      name: data.name,
-      type: data.type || data.locationType || 'Other',
-      description: data.description || '',
-      latitude: data.latitude,
-      longitude: data.longitude,
-      address: data.address || '',
-      caseName: data.caseName || '',
-      relatedEntityIds: data.relatedEntityIds || (data.entityId ? [data.entityId] : []),
-      relatedEvidenceIds: data.relatedEvidenceIds || [],
-      createdAt: new Date().toISOString(),
+    if (options.openInvestigation) {
+      setStartInvestigationOnNetwork(true)
     }
-    setLocations(prev => [...prev, loc])
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: data.caseId, date: new Date().toISOString().slice(0, 10),
-      event: `Location recorded: ${loc.name}`,
-      type: 'LOCATION_RECORDED', locationId: loc.id,
-      createdAt: new Date().toISOString(),
+    if (options.networkNode) {
+      setSelectedNetworkNode(options.networkNode)
     }
-    setTimeline(prev => [tlEntry, ...prev])
-    showToast(`Location "${loc.name}" recorded`)
-    return loc
-  }, [showToast])
-
-  const updateLocation = useCallback((locationId, updates) => {
-    setLocations(prev => prev.map(loc =>
-      loc.id === locationId ? { ...loc, ...updates } : loc
-    ))
-    showToast('Location updated')
-  }, [showToast])
-
-  const deleteLocation = useCallback((locationId) => {
-    const loc = locations.find(l => l.id === locationId)
-    setLocations(prev => prev.filter(loc => loc.id !== locationId))
-    showToast(loc ? `Location "${loc.name}" deleted` : 'Location deleted')
-  }, [locations, showToast])
-
-  const addEvidence = useCallback((data) => {
-    const item = {
-      id: data.id || `EVD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      caseId: data.caseId,
-      title: data.title || '',
-      type: data.type || 'Other',
-      description: data.description || '',
-      date: data.date || new Date().toISOString().slice(0, 10),
-      source: data.source || 'Field Report',
-      relatedEntityId: data.relatedEntityId || null,
-      status: data.status || 'Pending',
-      createdAt: new Date().toISOString(),
-    }
-    setEvidence(prev => [item, ...prev])
-    const entity = item.relatedEntityId ? entities.find(e => e.id === item.relatedEntityId) : null
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId: data.caseId, date: item.date,
-      event: `Evidence added: ${item.title}${entity ? ` (Related: ${entity.name})` : ''}`,
-      type: 'EVIDENCE_ADDED', createdAt: new Date().toISOString(),
-    }
-    setTimeline(prev => [tlEntry, ...prev])
-    showToast(`Evidence "${item.title}" added`)
-    return item
-  }, [entities, showToast])
-
-  const runAIAnalysis = useCallback(async (caseId) => {
-    const caseEntities = entities.filter(e => e.caseId === caseId)
-    const caseIntel = intelligence.filter(i => i.caseId === caseId)
-    const caseLocations = locations.filter(l => l.caseId === caseId)
-    if (caseEntities.length < 2) {
-      showToast('Need at least 2 entities to run analysis', 'error')
-      return []
-    }
-    setAnalyzing(true)
-    await simulateAnalysisProgress((msg) => setAnalysisStep(msg))
-    const suggestions = analyzeCase(caseEntities, caseIntel, caseLocations)
-    const suggestionsWithCase = suggestions.map(s => ({ ...s, caseId }))
-    setAISuggestions(prev => {
-      const filtered = prev.filter(s => s.caseId !== caseId || s.status !== 'PENDING')
-      return [...filtered, ...suggestionsWithCase]
-    })
-    const tlEntry = {
-      id: `tl-${Date.now()}`, caseId, date: new Date().toISOString().slice(0, 10),
-      event: `AI analysis completed — ${suggestionsWithCase.length} potential relationships identified`,
-      type: 'AI_ANALYSIS', createdAt: new Date().toISOString(),
-    }
-    setTimeline(prev => [tlEntry, ...prev])
-    setAnalyzing(false); setAnalysisStep('')
-    showToast(`AI analysis complete — ${suggestionsWithCase.length} suggestions found`)
-    return suggestionsWithCase
-  }, [entities, intelligence, locations, showToast])
-
-  const runCaseAnalysis = useCallback(async (caseId) => {
-    const currentCase = cases.find(c => c.id === caseId)
-    if (!currentCase) return []
-
-    const suggestions = buildCaseAnalysisSuggestions(caseId, cases, entities, deniedCaseConnections)
-
-    setCaseAnalysisSuggestions(prev => {
-      const filtered = prev.filter(existing => existing.caseId !== caseId || existing.status !== 'PENDING')
-      return [...filtered, ...suggestions]
-    })
-
-    if (suggestions.length === 0) {
-      showToast('No significant connections found with existing cases.', 'info')
-      return []
-    }
-
-    showToast(`Found ${suggestions.length} potential case connection${suggestions.length === 1 ? '' : 's'}.`)
-    return suggestions
-  }, [cases, deniedCaseConnections, entities, showToast])
-
-  const acceptCaseConnection = useCallback((suggestionId) => {
-    const suggestion = caseAnalysisSuggestions.find(s => s.id === suggestionId)
-    if (!suggestion) return
-
-    setCaseAnalysisSuggestions(prev => prev.filter(s => s.id !== suggestionId))
-    setAcceptedCaseConnections(prev => {
-      const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
-      if (prev.some(item => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)) return prev
-      return [{
-        id: suggestion.id,
-        caseId: suggestion.caseId,
-        targetCaseId: suggestion.targetCaseId,
-        targetCaseTitle: suggestion.targetCaseTitle,
-        connectionType: suggestion.connectionType,
-        commonInfo: suggestion.commonInfo,
-        sharedEntities: suggestion.sharedEntities || [],
-        confidence: suggestion.confidence,
-        reason: suggestion.reason,
-        acceptedAt: new Date().toISOString(),
-      }, ...prev]
-    })
-    showToast(`Connection accepted: ${suggestion.targetCaseTitle}`)
-  }, [caseAnalysisSuggestions, showToast])
-
-  const denyCaseConnection = useCallback((suggestionId) => {
-    const suggestion = caseAnalysisSuggestions.find(s => s.id === suggestionId)
-    if (!suggestion) return
-
-    setCaseAnalysisSuggestions(prev => prev.filter(s => s.id !== suggestionId))
-    setDeniedCaseConnections(prev => {
-      const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
-      if (prev.some(item => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)) return prev
-      return [{
-        caseId: suggestion.caseId,
-        targetCaseId: suggestion.targetCaseId,
-        connectionType: suggestion.connectionType,
-        commonInfo: suggestion.commonInfo,
-        sharedEntities: suggestion.sharedEntities || [],
-        deniedAt: new Date().toISOString(),
-      }, ...prev]
-    })
-    showToast('Suggestion denied', 'info')
-  }, [caseAnalysisSuggestions, showToast])
-
-  const acceptSuggestion = useCallback((suggestionId) => {
-    setAISuggestions(prev => prev.map(s => s.id === suggestionId ? { ...s, status: 'ACCEPTED' } : s))
-    const suggestion = aiSuggestions.find(s => s.id === suggestionId)
-    if (suggestion) {
-      const rel = {
-        id: `REL-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        caseId: suggestion.caseId, fromId: suggestion.fromId, toId: suggestion.toId,
-        type: suggestion.type, label: suggestion.reason?.slice(0, 80) || '',
-        status: 'AI_CONFIRMED', confidence: suggestion.confidence,
+  }, [])
+  const openStartInvestigation = useCallback(() => {
+    setInvestigationModalOpen(true)
+  }, [])
+  const createInvestigation = useCallback(
+    (data) => {
+      const inv = { id: `INV-${Date.now()}`, ...data, createdAt: new Date().toISOString() }
+      const updated = [inv, ...investigations]
+      setInvestigations(updated)
+      saveInvestigations(updated)
+      setActiveInvestigation(inv)
+      setInvestigationModalOpen(false)
+      setStartInvestigationOnNetwork(true)
+      navigate('network')
+      showToast(`Investigation "${data.name}" created successfully`)
+    },
+    [investigations, navigate, showToast],
+  )
+  const addCase = useCallback(
+    async (data) => {
+      const id = data.id || `NX-2026-${String(Math.floor(Math.random() * 900) + 100)}`
+      const newCase = {
+        id,
+        title: data.title,
+        type: data.type || 'Other',
+        priority: data.priority || 'MEDIUM',
+        status: 'Active',
+        leadInvestigator: user?.name || 'Unassigned',
+        entities: 0,
+        lastUpdated: new Date().toISOString().slice(0, 10),
+        risk: data.priority === 'CRITICAL' || data.priority === 'HIGH' ? 'HIGH' : data.priority || 'MEDIUM',
+        description: data.description || '',
+        location: data.location || '',
+        date: data.date || new Date().toISOString().slice(0, 10),
+        persons: [],
+        evidence: [],
+        timeline: [{ date: new Date().toISOString().slice(0, 10), event: 'Case opened', type: 'CASE_EVENT' }],
+      }
+      setCases((prev) => [newCase, ...prev])
+      setNewCaseModalOpen(false)
+      showToast(`Case "${newCase.title}" created`)
+      setSelectedCaseId(newCase.id)
+      setActiveCaseId(newCase.id)
+      setActiveInvestigation({
+        id: `INV-${Date.now()}`,
+        name: newCase.title,
+        caseId: newCase.id,
+        priority: newCase.priority,
+        type: newCase.type,
+        status: 'Active',
+        createdAt: new Date().toISOString(),
+      })
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: newCase.id,
+        date: new Date().toISOString().slice(0, 10),
+        event: 'Case opened',
+        type: 'CASE_EVENT',
         createdAt: new Date().toISOString(),
       }
-      setRelationships(prev => [...prev, rel])
-      const tlEntry = {
-        id: `tl-${Date.now()}`, caseId: suggestion.caseId, date: new Date().toISOString().slice(0, 10),
-        event: `Relationship confirmed: ${suggestion.fromName} → ${suggestion.toName} (${suggestion.confidence}% confidence)`,
-        type: 'RELATIONSHIP_CONFIRMED', createdAt: new Date().toISOString(),
+      setTimeline((prev) => [tlEntry, ...prev])
+      const backendCase = await syncWithBackend('/cases', 'POST', {
+        title: newCase.title,
+        date: newCase.date,
+        status: 'open',
+        priority: String(newCase.priority).toLowerCase(),
+        case_type: newCase.type || 'Criminal Investigation',
+        investigating_officer: newCase.leadInvestigator || 'Officer Inspector',
+      })
+      if (backendCase?.data?.id) {
+        setCases((prev) => prev.map((c) => (c.id === newCase.id ? { ...c, backendCaseId: backendCase.data.id } : c)))
       }
-      setTimeline(prev => [tlEntry, ...prev])
-      showToast(`Relationship accepted: ${suggestion.fromName} → ${suggestion.toName}`)
-    }
-  }, [aiSuggestions, showToast])
-
-  const rejectSuggestion = useCallback((suggestionId) => {
-    setAISuggestions(prev => prev.map(s => s.id === suggestionId ? { ...s, status: 'REJECTED' } : s))
-    showToast('Suggestion rejected', 'info')
-  }, [showToast])
-
+      return newCase
+    },
+    [showToast, syncWithBackend, user],
+  )
+  const updateCaseStatus = useCallback(
+    (caseId, status) => {
+      setCases((prev) =>
+        prev.map((c) => (c.id === caseId ? { ...c, status, lastUpdated: new Date().toISOString().slice(0, 10) } : c)),
+      )
+      showToast(`Case status updated to ${status}`)
+    },
+    [showToast],
+  )
+  const addEntity = useCallback(
+    async (data) => {
+      const entity = {
+        id: data.id || `ENT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        caseId: data.caseId,
+        type: data.type,
+        name: data.name,
+        risk: data.risk || 'LOW',
+        role: data.role || '',
+        description: data.description || '',
+        data: data.data || {},
+        createdAt: new Date().toISOString(),
+      }
+      setEntities((prev) => [...prev, entity])
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: new Date().toISOString().slice(0, 10),
+        event: `Entity added: ${entity.name} (${entity.type})`,
+        type: 'ENTITY_ADDED',
+        entityId: entity.id,
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      showToast(`Entity "${entity.name}" added`)
+      const caseRecord = cases.find((c) => c.id === data.caseId)
+      const backendCaseId = caseRecord?.backendCaseId || data.caseId
+      if (backendCaseId) {
+        const requestType = String(data.type || 'person').toLowerCase()
+        const backendPayload = {
+          type: requestType,
+          name: data.name,
+          role: data.role || 'associate',
+          age: data.age || null,
+          plate_number: data.plateNumber || data.plate_number || null,
+        }
+        await syncWithBackend(`/cases/${backendCaseId}/entities`, 'POST', backendPayload)
+      }
+      return entity
+    },
+    [cases, showToast, syncWithBackend],
+  )
+  const addRelationship = useCallback(
+    (data) => {
+      if (data.fromId === data.toId) {
+        showToast('Cannot create self-relationship', 'error')
+        return null
+      }
+      const fromEntity = entities.find((e) => e.id === data.fromId)
+      const toEntity = entities.find((e) => e.id === data.toId)
+      const rel = {
+        id: data.id || `REL-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        caseId: data.caseId,
+        fromId: data.fromId,
+        toId: data.toId,
+        type: data.type || 'CONNECTED_TO',
+        label: data.label || '',
+        status: 'MANUAL',
+        createdAt: new Date().toISOString(),
+      }
+      setRelationships((prev) => [...prev, rel])
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: new Date().toISOString().slice(0, 10),
+        event: `Relationship added: ${fromEntity?.name || data.fromId} → ${toEntity?.name || data.toId}`,
+        type: 'RELATIONSHIP_CONFIRMED',
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      showToast('Relationship added')
+      return rel
+    },
+    [entities, showToast],
+  )
+  const addIntelligence = useCallback(
+    (data) => {
+      const item = {
+        id: `INT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        caseId: data.caseId,
+        text: data.text || data.description || '',
+        source: data.source || 'Field Report',
+        date: data.date || new Date().toISOString().slice(0, 10),
+        relatedEntityIds: data.relatedEntityIds || data.entityIds || [],
+        createdAt: new Date().toISOString(),
+      }
+      setIntelligence((prev) => [item, ...prev])
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: item.date,
+        event: `Intelligence added: ${(item.text || '').slice(0, 60)}...`,
+        type: 'INTELLIGENCE_ADDED',
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      showToast('Intelligence added')
+      return item
+    },
+    [showToast],
+  )
+  const addLocation = useCallback(
+    (data) => {
+      const loc = {
+        id: data.id || `LOC-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        caseId: data.caseId,
+        name: data.name,
+        type: data.type || data.locationType || 'Other',
+        description: data.description || '',
+        latitude: data.latitude,
+        longitude: data.longitude,
+        address: data.address || '',
+        caseName: data.caseName || '',
+        relatedEntityIds: data.relatedEntityIds || (data.entityId ? [data.entityId] : []),
+        relatedEvidenceIds: data.relatedEvidenceIds || [],
+        createdAt: new Date().toISOString(),
+      }
+      setLocations((prev) => [...prev, loc])
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: new Date().toISOString().slice(0, 10),
+        event: `Location recorded: ${loc.name}`,
+        type: 'LOCATION_RECORDED',
+        locationId: loc.id,
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      showToast(`Location "${loc.name}" recorded`)
+      return loc
+    },
+    [showToast],
+  )
+  const updateLocation = useCallback(
+    (locationId, updates) => {
+      setLocations((prev) => prev.map((loc) => (loc.id === locationId ? { ...loc, ...updates } : loc)))
+      showToast('Location updated')
+    },
+    [showToast],
+  )
+  const deleteLocation = useCallback(
+    (locationId) => {
+      const loc = locations.find((l) => l.id === locationId)
+      setLocations((prev) => prev.filter((loc) => loc.id !== locationId))
+      showToast(loc ? `Location "${loc.name}" deleted` : 'Location deleted')
+    },
+    [locations, showToast],
+  )
+  const addEvidence = useCallback(
+    (data) => {
+      const item = {
+        id: data.id || `EVD-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        caseId: data.caseId,
+        title: data.title || '',
+        type: data.type || 'Other',
+        description: data.description || '',
+        date: data.date || new Date().toISOString().slice(0, 10),
+        source: data.source || 'Field Report',
+        relatedEntityId: data.relatedEntityId || null,
+        status: data.status || 'Pending',
+        createdAt: new Date().toISOString(),
+      }
+      setEvidence((prev) => [item, ...prev])
+      const entity = item.relatedEntityId ? entities.find((e) => e.id === item.relatedEntityId) : null
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: item.date,
+        event: `Evidence added: ${item.title}${entity ? ` (Related: ${entity.name})` : ''}`,
+        type: 'EVIDENCE_ADDED',
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      showToast(`Evidence "${item.title}" added`)
+      return item
+    },
+    [entities, showToast],
+  )
+  const runAIAnalysis = useCallback(
+    async (caseId) => {
+      const caseEntities = entities.filter((e) => e.caseId === caseId)
+      const caseIntel = intelligence.filter((i) => i.caseId === caseId)
+      const caseLocations = locations.filter((l) => l.caseId === caseId)
+      if (caseEntities.length < 2) {
+        showToast('Need at least 2 entities to run analysis', 'error')
+        return []
+      }
+      setAnalyzing(true)
+      await simulateAnalysisProgress((msg) => setAnalysisStep(msg))
+      const suggestions = analyzeCase(caseEntities, caseIntel, caseLocations)
+      const suggestionsWithCase = suggestions.map((s) => ({ ...s, caseId }))
+      setAISuggestions((prev) => {
+        const filtered = prev.filter((s) => s.caseId !== caseId || s.status !== 'PENDING')
+        return [...filtered, ...suggestionsWithCase]
+      })
+      const tlEntry = {
+        id: `tl-${Date.now()}`,
+        caseId,
+        date: new Date().toISOString().slice(0, 10),
+        event: `AI analysis completed — ${suggestionsWithCase.length} potential relationships identified`,
+        type: 'AI_ANALYSIS',
+        createdAt: new Date().toISOString(),
+      }
+      setTimeline((prev) => [tlEntry, ...prev])
+      setAnalyzing(false)
+      setAnalysisStep('')
+      showToast(`AI analysis complete — ${suggestionsWithCase.length} suggestions found`)
+      return suggestionsWithCase
+    },
+    [entities, intelligence, locations, showToast],
+  )
+  const runCaseAnalysis = useCallback(
+    async (caseId) => {
+      const currentCase = cases.find((c) => c.id === caseId)
+      if (!currentCase) return []
+      const suggestions = buildCaseAnalysisSuggestions(caseId, cases, entities, deniedCaseConnections)
+      setCaseAnalysisSuggestions((prev) => {
+        const filtered = prev.filter((existing) => existing.caseId !== caseId || existing.status !== 'PENDING')
+        return [...filtered, ...suggestions]
+      })
+      if (suggestions.length === 0) {
+        showToast('No significant connections found with existing cases.', 'info')
+        return []
+      }
+      showToast(`Found ${suggestions.length} potential case connection${suggestions.length === 1 ? '' : 's'}.`)
+      return suggestions
+    },
+    [cases, deniedCaseConnections, entities, showToast],
+  )
+  const acceptCaseConnection = useCallback(
+    (suggestionId) => {
+      const suggestion = caseAnalysisSuggestions.find((s) => s.id === suggestionId)
+      if (!suggestion) return
+      setCaseAnalysisSuggestions((prev) => prev.filter((s) => s.id !== suggestionId))
+      setAcceptedCaseConnections((prev) => {
+        const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
+        if (
+          prev.some((item) => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)
+        )
+          return prev
+        return [
+          {
+            id: suggestion.id,
+            caseId: suggestion.caseId,
+            targetCaseId: suggestion.targetCaseId,
+            targetCaseTitle: suggestion.targetCaseTitle,
+            connectionType: suggestion.connectionType,
+            commonInfo: suggestion.commonInfo,
+            sharedEntities: suggestion.sharedEntities || [],
+            confidence: suggestion.confidence,
+            reason: suggestion.reason,
+            acceptedAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]
+      })
+      showToast(`Connection accepted: ${suggestion.targetCaseTitle}`)
+    },
+    [caseAnalysisSuggestions, showToast],
+  )
+  const denyCaseConnection = useCallback(
+    (suggestionId) => {
+      const suggestion = caseAnalysisSuggestions.find((s) => s.id === suggestionId)
+      if (!suggestion) return
+      setCaseAnalysisSuggestions((prev) => prev.filter((s) => s.id !== suggestionId))
+      setDeniedCaseConnections((prev) => {
+        const key = `${suggestion.caseId}:${suggestion.targetCaseId}:${suggestion.connectionType}:${suggestion.commonInfo}`
+        if (
+          prev.some((item) => `${item.caseId}:${item.targetCaseId}:${item.connectionType}:${item.commonInfo}` === key)
+        )
+          return prev
+        return [
+          {
+            caseId: suggestion.caseId,
+            targetCaseId: suggestion.targetCaseId,
+            connectionType: suggestion.connectionType,
+            commonInfo: suggestion.commonInfo,
+            sharedEntities: suggestion.sharedEntities || [],
+            deniedAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]
+      })
+      showToast('Suggestion denied', 'info')
+    },
+    [caseAnalysisSuggestions, showToast],
+  )
+  const acceptSuggestion = useCallback(
+    (suggestionId) => {
+      setAISuggestions((prev) => prev.map((s) => (s.id === suggestionId ? { ...s, status: 'ACCEPTED' } : s)))
+      const suggestion = aiSuggestions.find((s) => s.id === suggestionId)
+      if (suggestion) {
+        const rel = {
+          id: `REL-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          caseId: suggestion.caseId,
+          fromId: suggestion.fromId,
+          toId: suggestion.toId,
+          type: suggestion.type,
+          label: suggestion.reason?.slice(0, 80) || '',
+          status: 'AI_CONFIRMED',
+          confidence: suggestion.confidence,
+          createdAt: new Date().toISOString(),
+        }
+        setRelationships((prev) => [...prev, rel])
+        const tlEntry = {
+          id: `tl-${Date.now()}`,
+          caseId: suggestion.caseId,
+          date: new Date().toISOString().slice(0, 10),
+          event: `Relationship confirmed: ${suggestion.fromName} → ${suggestion.toName} (${suggestion.confidence}% confidence)`,
+          type: 'RELATIONSHIP_CONFIRMED',
+          createdAt: new Date().toISOString(),
+        }
+        setTimeline((prev) => [tlEntry, ...prev])
+        showToast(`Relationship accepted: ${suggestion.fromName} → ${suggestion.toName}`)
+      }
+    },
+    [aiSuggestions, showToast],
+  )
+  const rejectSuggestion = useCallback(
+    (suggestionId) => {
+      setAISuggestions((prev) => prev.map((s) => (s.id === suggestionId ? { ...s, status: 'REJECTED' } : s)))
+      showToast('Suggestion rejected', 'info')
+    },
+    [showToast],
+  )
   const linkEvidence = useCallback(() => {
-    setLinkEvidenceModalOpen(false); setLinkEvidenceId(null)
+    setLinkEvidenceModalOpen(false)
+    setLinkEvidenceId(null)
     showToast('Evidence linked successfully')
   }, [showToast])
-
-  const dismissNotification = useCallback((id) => { setNotifications(prev => prev.filter(n => n.id !== id)) }, [])
-  const markNotificationsRead = useCallback(() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))) }, [])
-
-  const updateSettings = useCallback((patch) => {
-    setSettings(prev => { const next = { ...prev, ...patch }; saveSettings(next); return next })
-    showToast('Settings saved')
-  }, [showToast])
-
+  const importCDR = useCallback(
+    async (caseId, file, operator) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (operator) formData.append('operator', operator)
+      const response = await syncWithBackend(`/cases/${caseId}/cdr/import`, 'POST', formData, true)
+      if (response?.data) {
+        showToast('CDR data imported and analyzed successfully')
+        return response.data
+      }
+      const errMsg = response?.error || 'CDR import failed. Please check file format.'
+      showToast(errMsg, 'error')
+      return null
+    },
+    [syncWithBackend, showToast],
+  )
+  const getPhoneProfile = useCallback(
+    async (phoneNumber) => {
+      const response = await syncWithBackend(`/phones/${phoneNumber}/profile`)
+      return response?.data || null
+    },
+    [syncWithBackend],
+  )
+  const getPhoneIntelligence = useCallback(
+    async (caseId) => {
+      if (!caseId) return null
+      const response = await syncWithBackend(`/cases/${caseId}/phone-intelligence`)
+      return response?.data || null
+    },
+    [syncWithBackend],
+  )
+  const verifyChain = useCallback(async () => {
+    const response = await syncWithBackend('/ledger/verify')
+    return response?.data || null
+  }, [syncWithBackend])
+  const verifyEvidence = useCallback(
+    async (evidenceId) => {
+      if (!evidenceId) return null
+      const response = await syncWithBackend(`/evidence/${evidenceId}/verify`)
+      return response?.data || null
+    },
+    [syncWithBackend],
+  )
+  const getLedgerSummary = useCallback(async () => {
+    const response = await syncWithBackend('/ledger/summary')
+    return response?.data || null
+  }, [syncWithBackend])
+  const getLedgerEntries = useCallback(
+    async (caseId = null) => {
+      const path = caseId ? `/ledger/entries?case_id=${caseId}` : '/ledger/entries'
+      const response = await syncWithBackend(path)
+      return response?.data || []
+    },
+    [syncWithBackend],
+  )
+  const getLedgerBlocks = useCallback(async () => {
+    const response = await syncWithBackend('/ledger/blocks')
+    return response?.data || []
+  }, [syncWithBackend])
+  const sealLedgerBlock = useCallback(
+    async (sealedBy = 'investigator') => {
+      const response = await syncWithBackend('/ledger/seal', 'POST', { sealed_by: sealedBy })
+      if (response?.data) {
+        showToast('Block sealed successfully')
+        return response.data
+      }
+      showToast(response?.error || 'Failed to seal block', 'error')
+      return null
+    },
+    [syncWithBackend, showToast],
+  )
+  const fetchCaseEvidence = useCallback(
+    async (caseId) => {
+      if (!caseId) return []
+      try {
+        const response = await syncWithBackend(`/cases/${caseId}/evidence`)
+        if (response?.success && response?.data && Array.isArray(response.data)) {
+          const backendItems = response.data.map((item) => ({
+            id: item.id,
+            caseId: item.case_id,
+            title: item.title,
+            type: item.evidence_type || 'Document',
+            description: item.description || '',
+            date: item.date || (item.created_at ? item.created_at.slice(0, 10) : ''),
+            source: item.source || 'Field Investigation',
+            status: item.status || 'Pending',
+            relatedEntityId: item.related_entity_id,
+            sha256: item.sha256,
+            fileName: item.file_name,
+            filePath: item.file_path,
+            createdAt: item.created_at,
+          }))
+          setEvidence((prev) => {
+            const others = prev.filter((e) => e.caseId !== caseId)
+            return [...others, ...backendItems]
+          })
+          return backendItems
+        } else if (response?.error) {
+          console.error('Failed to fetch evidence:', response.error)
+          // Don't show toast for expected errors like no case found
+          if (!response.error.includes('not found') && !response.error.includes('Case')) {
+            showToast(`Failed to fetch evidence: ${response.error}`, 'error')
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching evidence:', e)
+        showToast('Network error while fetching evidence', 'error')
+      }
+      return []
+    },
+    [syncWithBackend, showToast],
+  )
+  const fetchCaseEntities = useCallback(
+    async (caseId) => {
+      if (!caseId) return []
+      try {
+        const response = await syncWithBackend(`/cases/${caseId}/entities`)
+        if (response?.success && response?.data && Array.isArray(response.data)) {
+          const backendEntities = response.data.map((item) => ({
+            id: item.id,
+            caseId: caseId,
+            name: item.name,
+            type: item.type,
+            role: item.role,
+            risk: 'MEDIUM',
+          }))
+          setEntities((prev) => {
+            const others = prev.filter((e) => e.caseId !== caseId)
+            return [...others, ...backendEntities]
+          })
+          return backendEntities
+        } else if (response?.error) {
+          console.error('Failed to fetch entities:', response.error)
+          if (!response.error.includes('not found') && !response.error.includes('Case')) {
+            showToast(`Failed to fetch entities: ${response.error}`, 'error')
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching entities:', e)
+        showToast('Network error while fetching entities', 'error')
+      }
+      return []
+    },
+    [syncWithBackend, showToast],
+  )
+  useEffect(() => {
+    if (!selectedCaseId) return
+    const frame = window.requestAnimationFrame(() => {
+      fetchCaseEvidence(selectedCaseId)
+      fetchCaseEntities(selectedCaseId)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [selectedCaseId, fetchCaseEvidence, fetchCaseEntities])
+  const batchUploadEvidence = useCallback(
+    async (caseId, files) => {
+      const formData = new FormData()
+      files.forEach((file) => formData.append('files', file))
+      try {
+        const response = await syncWithBackend(`/cases/${caseId}/evidence/batch`, 'POST', formData, true)
+        if (response?.success && response?.data) {
+          showToast(`Uploaded ${response.data.successful || 0} files successfully`)
+          await fetchCaseEvidence(caseId)
+          return response.data
+        } else {
+          const errorMsg = response?.error || 'Batch upload failed'
+          console.error('Batch upload failed:', errorMsg)
+          showToast(errorMsg, 'error')
+          return null
+        }
+      } catch (e) {
+        console.error('Batch upload error:', e)
+        showToast('Network error during batch upload', 'error')
+        return null
+      }
+    },
+    [syncWithBackend, showToast, fetchCaseEvidence],
+  )
+  const dismissNotification = useCallback((id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  }, [])
+  const markNotificationsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  }, [])
+  const updateSettings = useCallback(
+    (patch) => {
+      setSettings((prev) => {
+        const next = { ...prev, ...patch }
+        saveSettings(next)
+        return next
+      })
+      showToast('Settings saved')
+    },
+    [showToast],
+  )
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        setSearchOpen(false); setNotificationsOpen(false); setProfileOpen(false)
-        setInvestigationModalOpen(false); setNewCaseModalOpen(false); setLinkEvidenceModalOpen(false)
-        setAddEntityModalOpen(false); setAddRelationshipModalOpen(false)
+        setSearchOpen(false)
+        setNotificationsOpen(false)
+        setProfileOpen(false)
+        setInvestigationModalOpen(false)
+        setNewCaseModalOpen(false)
+        setLinkEvidenceModalOpen(false)
+        setAddEntityModalOpen(false)
+        setAddRelationshipModalOpen(false)
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true) }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-
-  const value = useMemo(() => ({
-    user, isAuthenticated: !!user, page, navigateTo, login, logout,
-    activeView, sidebarOpen, sidebarCollapsed, searchOpen, notificationsOpen, profileOpen,
-    investigationModalOpen, startInvestigationOnNetwork,
-    cases, entities, relationships, intelligence, evidence, aiSuggestions, caseAnalysisSuggestions, acceptedCaseConnections, deniedCaseConnections, timeline, locations, investigations,
-    activeInvestigation, activeCaseId, notifications, toasts, settings,
-    caseFilter, caseHighRiskOnly, selectedCaseId, selectedSuspectId, selectedEvidenceId,
-    networkFocusEntity, selectedNetworkNode,
-    newCaseModalOpen, linkEvidenceModalOpen, linkEvidenceId,
-    addEntityModalOpen, addRelationshipModalOpen,
-    analyzing, analysisStep,
-    unreadCount, navItems,
-    setSidebarOpen, setSidebarCollapsed, setSearchOpen, setNotificationsOpen, setProfileOpen,
-    setInvestigationModalOpen, setStartInvestigationOnNetwork,
-    setCaseFilter, setCaseHighRiskOnly, setSelectedCaseId, setSelectedSuspectId,
-    setSelectedEvidenceId, setNetworkFocusEntity, setSelectedNetworkNode, setActiveCaseId,
-    setNewCaseModalOpen, setLinkEvidenceModalOpen, setLinkEvidenceId,
-    setActiveInvestigation,
-    setAddEntityModalOpen, setAddRelationshipModalOpen,
-    navigate, openStartInvestigation, createInvestigation,
-    addCase, updateCaseStatus, addEntity, addRelationship, addIntelligence, addLocation, updateLocation, deleteLocation, addEvidence,
-    runAIAnalysis, runCaseAnalysis, acceptCaseConnection, denyCaseConnection, acceptSuggestion, rejectSuggestion,
-    linkEvidence, dismissNotification, markNotificationsRead, updateSettings, showToast,
-  }), [
-    user, page, navigateTo, login, logout, activeView, sidebarOpen, sidebarCollapsed, searchOpen,
-    notificationsOpen, profileOpen, investigationModalOpen, startInvestigationOnNetwork,
-    cases, entities, relationships, intelligence, evidence, aiSuggestions, caseAnalysisSuggestions, acceptedCaseConnections, deniedCaseConnections, timeline, locations, investigations,
-    activeInvestigation, activeCaseId, notifications, toasts, settings,
-    caseFilter, caseHighRiskOnly, selectedCaseId, selectedSuspectId, selectedEvidenceId,
-    networkFocusEntity, selectedNetworkNode,
-    newCaseModalOpen, linkEvidenceModalOpen, linkEvidenceId,
-    addEntityModalOpen, addRelationshipModalOpen,
-    analyzing, analysisStep,
-    unreadCount, navItems, navigate, openStartInvestigation, createInvestigation,
-    addCase, updateCaseStatus, addEntity, addRelationship, addIntelligence, addLocation, updateLocation, deleteLocation, addEvidence,
-    runAIAnalysis, runCaseAnalysis, acceptCaseConnection, denyCaseConnection, acceptSuggestion, rejectSuggestion,
-    linkEvidence, dismissNotification, markNotificationsRead, updateSettings, showToast,
-  ])
-
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: !!user,
+      page,
+      navigateTo,
+      login,
+      logout,
+      activeView,
+      sidebarOpen,
+      sidebarCollapsed,
+      searchOpen,
+      notificationsOpen,
+      profileOpen,
+      investigationModalOpen,
+      startInvestigationOnNetwork,
+      cases,
+      entities,
+      relationships,
+      intelligence,
+      evidence,
+      aiSuggestions,
+      caseAnalysisSuggestions,
+      acceptedCaseConnections,
+      deniedCaseConnections,
+      timeline,
+      locations,
+      investigations,
+      activeInvestigation,
+      activeCaseId,
+      notifications,
+      toasts,
+      settings,
+      caseFilter,
+      caseHighRiskOnly,
+      selectedCaseId,
+      selectedSuspectId,
+      selectedEvidenceId,
+      networkFocusEntity,
+      selectedNetworkNode,
+      newCaseModalOpen,
+      linkEvidenceModalOpen,
+      linkEvidenceId,
+      addEntityModalOpen,
+      addRelationshipModalOpen,
+      analyzing,
+      analysisStep,
+      unreadCount,
+      navItems,
+      setSidebarOpen,
+      setSidebarCollapsed,
+      setSearchOpen,
+      setNotificationsOpen,
+      setProfileOpen,
+      setInvestigationModalOpen,
+      setStartInvestigationOnNetwork,
+      setCaseFilter,
+      setCaseHighRiskOnly,
+      setSelectedCaseId,
+      setSelectedSuspectId,
+      setSelectedEvidenceId,
+      setNetworkFocusEntity,
+      setSelectedNetworkNode,
+      setActiveCaseId,
+      setNewCaseModalOpen,
+      setLinkEvidenceModalOpen,
+      setLinkEvidenceId,
+      setActiveInvestigation,
+      setAddEntityModalOpen,
+      setAddRelationshipModalOpen,
+      navigate,
+      openStartInvestigation,
+      createInvestigation,
+      addCase,
+      updateCaseStatus,
+      addEntity,
+      addRelationship,
+      addIntelligence,
+      addLocation,
+      updateLocation,
+      deleteLocation,
+      addEvidence,
+      runAIAnalysis,
+      runCaseAnalysis,
+      acceptCaseConnection,
+      denyCaseConnection,
+      acceptSuggestion,
+      rejectSuggestion,
+      linkEvidence,
+      dismissNotification,
+      markNotificationsRead,
+      updateSettings,
+      showToast,
+      importCDR,
+      getPhoneProfile,
+      verifyChain,
+      batchUploadEvidence,
+      syncWithBackend,
+      fetchCaseEvidence,
+      fetchCaseEntities,
+      getPhoneIntelligence,
+      verifyEvidence,
+      getLedgerSummary,
+      getLedgerEntries,
+      getLedgerBlocks,
+      sealLedgerBlock,
+      uploadUrl,
+    }),
+    [
+      user,
+      page,
+      navigateTo,
+      login,
+      logout,
+      activeView,
+      sidebarOpen,
+      sidebarCollapsed,
+      searchOpen,
+      notificationsOpen,
+      profileOpen,
+      investigationModalOpen,
+      startInvestigationOnNetwork,
+      cases,
+      entities,
+      relationships,
+      intelligence,
+      evidence,
+      aiSuggestions,
+      caseAnalysisSuggestions,
+      acceptedCaseConnections,
+      deniedCaseConnections,
+      timeline,
+      locations,
+      investigations,
+      activeInvestigation,
+      activeCaseId,
+      notifications,
+      toasts,
+      settings,
+      caseFilter,
+      caseHighRiskOnly,
+      selectedCaseId,
+      selectedSuspectId,
+      selectedEvidenceId,
+      networkFocusEntity,
+      selectedNetworkNode,
+      newCaseModalOpen,
+      linkEvidenceModalOpen,
+      linkEvidenceId,
+      addEntityModalOpen,
+      addRelationshipModalOpen,
+      analyzing,
+      analysisStep,
+      unreadCount,
+      navItems,
+      navigate,
+      openStartInvestigation,
+      createInvestigation,
+      addCase,
+      updateCaseStatus,
+      addEntity,
+      addRelationship,
+      addIntelligence,
+      addLocation,
+      updateLocation,
+      deleteLocation,
+      addEvidence,
+      runAIAnalysis,
+      runCaseAnalysis,
+      acceptCaseConnection,
+      denyCaseConnection,
+      acceptSuggestion,
+      rejectSuggestion,
+      linkEvidence,
+      dismissNotification,
+      markNotificationsRead,
+      updateSettings,
+      showToast,
+      importCDR,
+      getPhoneProfile,
+      verifyChain,
+      batchUploadEvidence,
+      syncWithBackend,
+      fetchCaseEvidence,
+      fetchCaseEntities,
+      getPhoneIntelligence,
+      verifyEvidence,
+      getLedgerSummary,
+      getLedgerEntries,
+      getLedgerBlocks,
+      sealLedgerBlock,
+      uploadUrl,
+    ],
+  )
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
-
 export function useApp() {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp must be used within AppProvider')
