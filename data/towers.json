@@ -1,0 +1,67 @@
+[
+  {
+    "id": "CT-001",
+    "tower_id": "JIO-MUM-001",
+    "operator": "JIO",
+    "latitude": 19.0760,
+    "longitude": 72.8777,
+    "altitude": 10.0,
+    "coverage_radius_meters": 500.0,
+    "technology": "4G",
+    "sector_count": 3,
+    "address": "Mumbai Central, Mumbai",
+    "region": "Maharashtra"
+  },
+  {
+    "id": "CT-002",
+    "tower_id": "AIRTEL-DEL-002",
+    "operator": "Airtel",
+    "latitude": 28.6139,
+    "longitude": 77.2090,
+    "altitude": 15.0,
+    "coverage_radius_meters": 600.0,
+    "technology": "4G",
+    "sector_count": 3,
+    "address": "Connaught Place, Delhi",
+    "region": "Delhi"
+  },
+  {
+    "id": "CT-003",
+    "tower_id": "VODA-BAN-003",
+    "operator": "Vodafone",
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "altitude": 12.0,
+    "coverage_radius_meters": 550.0,
+    "technology": "3G",
+    "sector_count": 3,
+    "address": "MG Road, Bangalore",
+    "region": "Karnataka"
+  },
+  {
+    "id": "CT-004",
+    "tower_id": "JIO-HYD-004",
+    "operator": "JIO",
+    "latitude": 17.3850,
+    "longitude": 78.4867,
+    "altitude": 8.0,
+    "coverage_radius_meters": 450.0,
+    "technology": "5G",
+    "sector_count": 6,
+    "address": "HITEC City, Hyderabad",
+    "region": "Telangana"
+  },
+  {
+    "id": "CT-005",
+    "tower_id": "AIRTEL-CHN-005",
+    "operator": "Airtel",
+    "latitude": 13.0827,
+    "longitude": 80.2707,
+    "altitude": 11.0,
+    "coverage_radius_meters": 520.0,
+    "technology": "4G",
+    "sector_count": 3,
+    "address": "T Nagar, Chennai",
+    "region": "Tamil Nadu"
+  }
+]

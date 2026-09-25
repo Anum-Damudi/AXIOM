@@ -1,0 +1,52 @@
+[
+  {
+    "id": "PN-001",
+    "number": "+919876543210",
+    "normalized": "+919876543210",
+    "country_code": "IN",
+    "is_active": true,
+    "notes": "Primary suspect phone",
+    "first_seen": "2024-01-01T00:00:00Z",
+    "last_seen": "2024-03-15T23:59:59Z"
+  },
+  {
+    "id": "PN-002",
+    "number": "+919876543211",
+    "normalized": "+919876543211",
+    "country_code": "IN",
+    "is_active": true,
+    "notes": "Secondary suspect phone",
+    "first_seen": "2024-01-05T00:00:00Z",
+    "last_seen": "2024-03-10T23:59:59Z"
+  },
+  {
+    "id": "PN-003",
+    "number": "+919876543212",
+    "normalized": "+919876543212",
+    "country_code": "IN",
+    "is_active": true,
+    "notes": "Witness phone",
+    "first_seen": "2024-01-10T00:00:00Z",
+    "last_seen": "2024-03-20T23:59:59Z"
+  },
+  {
+    "id": "PN-004",
+    "number": "+919876543213",
+    "normalized": "+919876543213",
+    "country_code": "IN",
+    "is_active": false,
+    "notes": "Potential burner phone",
+    "first_seen": "2024-02-01T00:00:00Z",
+    "last_seen": "2024-02-15T23:59:59Z"
+  },
+  {
+    "id": "PN-005",
+    "number": "+919876543214",
+    "normalized": "+919876543214",
+    "country_code": "IN",
+    "is_active": true,
+    "notes": "Associate phone",
+    "first_seen": "2024-01-15T00:00:00Z",
+    "last_seen": "2024-03-18T23:59:59Z"
+  }
+]
