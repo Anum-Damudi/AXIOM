@@ -131,3 +131,7 @@ docker-compose up --build
 - `GET /api/v1/phones/{phone_number}/burner-detection` - Detect burner phones
 - `GET /api/v1/phones/{phone_number}/graph` - Get Neo4j network graph
 - `GET /api/v1/phones/{phone1}/path/{phone2}` - Find shortest call path
+
+# CREDENTIALS FOR SIH EVALUATORS
+- E-mail -admin@axiom.local
+- Password - Axiom@Admin2026!
