@@ -4,7 +4,7 @@
  * in the browser. Passwords are never stored client-side.
  */
 
-export const API_BASE = '/api/v1'
+export const API_BASE = `${import.meta.env.VITE_API_URL || ''}/api/v1`
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
