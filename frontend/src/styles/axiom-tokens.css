@@ -1,0 +1,237 @@
+/* ==========================================================================
+   AXIOM — Design System Tokens (v2)
+   --------------------------------------------------------------------------
+   Presentation-only layer. Loaded AFTER App.css so it refines — never
+   replaces — the existing component styling. Nothing here changes markup,
+   data, API behaviour or business logic; it only re-declares design tokens
+   and adds motion/elevation primitives.
+
+   Contents
+     1. Motion tokens (Level 1 / 2 / 3 durations + easing)
+     2. Elevation & depth tokens
+     3. Glow / illumination tokens
+     4. Refined surface & border ramp
+     5. Spacing / radius / typography scale
+     6. Status colour ramp (critical / warning / info / resolved)
+     7. Layout metrics
+     8. Light-theme counterparts
+     9. Reduced-motion global kill switch
+   ========================================================================== */
+
+:root {
+  /* ── 1. Motion tokens ────────────────────────────────────────────────
+     Level 1 — micro    : buttons, icons, hover, inputs, badges (100–200ms)
+     Level 2 — component: cards, dropdowns, modals, drawers, disclosure (200–400ms)
+     Level 3 — system   : page transitions, graph init, dashboards (400–800ms) */
+  --ax-dur-micro: 140ms;
+  --ax-dur-micro-fast: 110ms;
+  --ax-dur-component: 280ms;
+  --ax-dur-component-slow: 380ms;
+  --ax-dur-system: 520ms;
+  --ax-dur-system-slow: 720ms;
+
+  --ax-ease-standard: cubic-bezier(0.2, 0.7, 0.25, 1);
+  --ax-ease-entrance: cubic-bezier(0.16, 0.84, 0.28, 1);
+  --ax-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ax-ease-spring: cubic-bezier(0.34, 1.32, 0.5, 1);
+  --ax-ease-linear-scan: linear;
+
+  /* Stagger cadence for entrance reveals */
+  --ax-stagger-step: 55ms;
+  --ax-stagger-max: 620ms;
+
+  /* ── 2. Elevation & depth ──────────────────────────────────────────── */
+  --ax-elev-0: none;
+  --ax-elev-1: 0 1px 2px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(114, 152, 175, 0.04);
+  --ax-elev-2: 0 2px 6px rgba(0, 0, 0, 0.3), 0 10px 28px -12px rgba(0, 0, 0, 0.5);
+  --ax-elev-3: 0 6px 18px rgba(0, 0, 0, 0.34), 0 22px 54px -18px rgba(0, 0, 0, 0.62);
+  --ax-elev-4: 0 12px 30px rgba(0, 0, 0, 0.4), 0 40px 96px -24px rgba(0, 0, 0, 0.72);
+
+  /* Lift applied to interactive cards on hover */
+  --ax-lift-y: -2px;
+  --ax-lift-y-strong: -4px;
+
+  /* ── 3. Glow / illumination (used sparingly & intentionally) ───────── */
+  --ax-glow-accent: 0 0 0 1px var(--border-accent), 0 8px 30px -10px var(--accent-glow-strong);
+  --ax-glow-critical: 0 0 0 1px rgba(232, 160, 154, 0.34), 0 8px 30px -12px rgba(232, 160, 154, 0.28);
+  --ax-glow-warning: 0 0 0 1px rgba(227, 192, 122, 0.3), 0 8px 30px -12px rgba(227, 192, 122, 0.22);
+  --ax-glow-info: 0 0 0 1px rgba(114, 152, 175, 0.36), 0 8px 30px -12px rgba(114, 152, 175, 0.24);
+  --ax-glow-success: 0 0 0 1px rgba(143, 191, 159, 0.3), 0 8px 30px -12px rgba(143, 191, 159, 0.2);
+
+  /* Inner top highlight — gives layered surfaces a lit edge */
+  --ax-edge-light: inset 0 1px 0 rgba(194, 232, 255, 0.055);
+  --ax-edge-light-strong: inset 0 1px 0 rgba(194, 232, 255, 0.09);
+
+  /* ── 4. Refined surface & border ramp ─────────────────────────────── */
+  --ax-surface-0: color-mix(in srgb, var(--axiom-navy) 96%, var(--axiom-ice));
+  --ax-surface-1: color-mix(in srgb, var(--axiom-navy) 90%, var(--axiom-ice));
+  --ax-surface-2: color-mix(in srgb, var(--axiom-steel) 46%, var(--axiom-navy));
+  --ax-surface-glass: color-mix(in srgb, var(--axiom-navy) 78%, transparent);
+
+  --ax-border-hairline: rgba(114, 152, 175, 0.14);
+  --ax-border-soft: rgba(114, 152, 175, 0.22);
+  --ax-border-lit: rgba(194, 232, 255, 0.42);
+
+  /* Scanline / data-line texture used at very low opacity */
+  --ax-scanline: repeating-linear-gradient(
+    180deg,
+    transparent 0 3px,
+    rgba(114, 152, 175, 0.028) 3px 4px
+  );
+
+  /* Fine engineering grid used behind hero + graph surfaces */
+  --ax-grid-fine:
+    repeating-linear-gradient(90deg, transparent 0 47px, rgba(125, 211, 252, 0.032) 48px),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(125, 211, 252, 0.032) 48px);
+
+  /* ── 5. Spacing / radius / type scale ──────────────────────────────── */
+  --ax-space-1: 4px;
+  --ax-space-2: 8px;
+  --ax-space-3: 12px;
+  --ax-space-4: 16px;
+  --ax-space-5: 20px;
+  --ax-space-6: 24px;
+  --ax-space-7: 32px;
+  --ax-space-8: 40px;
+
+  --ax-radius-xs: 4px;
+  --ax-radius-sm: 7px;
+  --ax-radius-md: 11px;
+  --ax-radius-lg: 16px;
+  --ax-radius-pill: 999px;
+
+  /* Optical sizing: mono for identifiers/metrics, sans for prose */
+  --ax-font-mono: var(--font-mono);
+  --ax-eyebrow-size: 10px;
+  --ax-eyebrow-track: 0.15em;
+  --ax-meta-size: 11px;
+  --ax-label-size: 12px;
+  --ax-body-size: 13px;
+
+  /* ── 6. Status colour ramp ─────────────────────────────────────────── */
+  --ax-critical: var(--risk-high);
+  --ax-critical-bg: var(--risk-high-bg);
+  --ax-critical-line: rgba(232, 160, 154, 0.42);
+  --ax-critical-glow: rgba(232, 160, 154, 0.3);
+
+  --ax-warning: var(--risk-medium);
+  --ax-warning-bg: var(--risk-medium-bg);
+  --ax-warning-line: rgba(227, 192, 122, 0.4);
+  --ax-warning-glow: rgba(227, 192, 122, 0.24);
+
+  --ax-info: #7fc3e8;
+  --ax-info-bg: rgba(127, 195, 232, 0.12);
+  --ax-info-line: rgba(127, 195, 232, 0.4);
+  --ax-info-glow: rgba(127, 195, 232, 0.24);
+
+  --ax-resolved: var(--success);
+  --ax-resolved-bg: rgba(143, 191, 159, 0.12);
+  --ax-resolved-line: rgba(143, 191, 159, 0.4);
+  --ax-resolved-glow: rgba(143, 191, 159, 0.2);
+
+  /* ── 7. Layout metrics ─────────────────────────────────────────────── */
+  --ax-sidebar-w: var(--sidebar-width);
+  --ax-header-h: var(--header-height);
+  --ax-content-max: 1720px;
+  --ax-content-pad-x: 32px;
+  --ax-content-pad-y: 28px;
+
+  /* Node/edge colours for the intelligence graph */
+  --ax-graph-edge: rgba(148, 163, 184, 0.2);
+  --ax-graph-edge-active: var(--axiom-ice);
+  --ax-graph-pending: var(--risk-medium);
+}
+
+/* ── 8. Light theme counterparts ───────────────────────────────────────
+   Keeps every new token legible when the existing theme toggle switches
+   to [data-theme='light']. Values only — no structural change. */
+[data-theme='light'] {
+  --ax-dur-micro: 120ms;
+
+  --ax-elev-1: 0 1px 2px rgba(11, 34, 49, 0.07), 0 0 0 1px rgba(54, 92, 115, 0.06);
+  --ax-elev-2: 0 2px 6px rgba(11, 34, 49, 0.07), 0 10px 28px -14px rgba(11, 34, 49, 0.16);
+  --ax-elev-3: 0 6px 18px rgba(11, 34, 49, 0.09), 0 22px 54px -20px rgba(11, 34, 49, 0.2);
+  --ax-elev-4: 0 12px 30px rgba(11, 34, 49, 0.11), 0 40px 96px -26px rgba(11, 34, 49, 0.24);
+
+  --ax-glow-accent: 0 0 0 1px rgba(0, 70, 113, 0.3), 0 8px 30px -12px rgba(0, 70, 113, 0.18);
+  --ax-glow-critical: 0 0 0 1px rgba(192, 86, 78, 0.3), 0 8px 30px -14px rgba(192, 86, 78, 0.2);
+  --ax-glow-warning: 0 0 0 1px rgba(171, 124, 28, 0.28), 0 8px 30px -14px rgba(171, 124, 28, 0.18);
+  --ax-glow-info: 0 0 0 1px rgba(11, 91, 147, 0.28), 0 8px 30px -14px rgba(11, 91, 147, 0.18);
+  --ax-glow-success: 0 0 0 1px rgba(47, 125, 80, 0.26), 0 8px 30px -14px rgba(47, 125, 80, 0.16);
+
+  --ax-edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --ax-edge-light-strong: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+  --ax-surface-0: #ffffff;
+  --ax-surface-1: #fbfdff;
+  --ax-surface-2: #eef4f9;
+  --ax-surface-glass: rgba(255, 255, 255, 0.82);
+
+  --ax-border-hairline: rgba(54, 92, 115, 0.14);
+  --ax-border-soft: rgba(54, 92, 115, 0.2);
+  --ax-border-lit: rgba(0, 70, 113, 0.34);
+
+  --ax-scanline: repeating-linear-gradient(
+    180deg,
+    transparent 0 3px,
+    rgba(54, 92, 115, 0.022) 3px 4px
+  );
+
+  --ax-grid-fine:
+    repeating-linear-gradient(90deg, transparent 0 47px, rgba(0, 70, 113, 0.035) 48px),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(0, 70, 113, 0.035) 48px);
+
+  --ax-critical: #c0564e;
+  --ax-critical-bg: rgba(192, 86, 78, 0.1);
+  --ax-critical-line: rgba(192, 86, 78, 0.36);
+  --ax-critical-glow: rgba(192, 86, 78, 0.22);
+
+  --ax-warning: #ab7c1c;
+  --ax-warning-bg: rgba(171, 124, 28, 0.1);
+  --ax-warning-line: rgba(171, 124, 28, 0.34);
+  --ax-warning-glow: rgba(171, 124, 28, 0.18);
+
+  --ax-info: #0b5b93;
+  --ax-info-bg: rgba(11, 91, 147, 0.08);
+  --ax-info-line: rgba(11, 91, 147, 0.32);
+  --ax-info-glow: rgba(11, 91, 147, 0.18);
+
+  --ax-resolved: #2f7d50;
+  --ax-resolved-bg: rgba(47, 125, 80, 0.09);
+  --ax-resolved-line: rgba(47, 125, 80, 0.32);
+  --ax-resolved-glow: rgba(47, 125, 80, 0.16);
+
+  --ax-graph-edge: rgba(54, 92, 115, 0.26);
+  --ax-graph-edge-active: #004671;
+}
+
+/* ── 9. Reduced-motion kill switch ────────────────────────────────────
+   Level 3 (system) motion is removed entirely, Level 2 is compressed, and
+   Level 1 (micro) interaction feedback is preserved so affordances remain
+   legible. Also honours the app's own `reduceAnimations` setting, which the
+   UI writes onto <html> as data-reduce-motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ax-dur-micro: 110ms;
+    --ax-dur-component: 140ms;
+    --ax-dur-component-slow: 140ms;
+    --ax-dur-system: 140ms;
+    --ax-dur-system-slow: 140ms;
+    --ax-stagger-step: 0ms;
+    --ax-stagger-max: 0ms;
+    --ax-lift-y: 0px;
+    --ax-lift-y-strong: 0px;
+  }
+}
+
+[data-reduce-motion='true'] {
+  --ax-dur-micro: 110ms;
+  --ax-dur-component: 140ms;
+  --ax-dur-component-slow: 140ms;
+  --ax-dur-system: 140ms;
+  --ax-dur-system-slow: 140ms;
+  --ax-stagger-step: 0ms;
+  --ax-stagger-max: 0ms;
+  --ax-lift-y: 0px;
+  --ax-lift-y-strong: 0px;
+}

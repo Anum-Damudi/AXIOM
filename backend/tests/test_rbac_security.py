@@ -121,3 +121,83 @@ def test_person_photo_upload_validation(client, auth_headers):
     served = client.get(f"/uploads/{photo_path}")
     assert served.status_code == 200
     assert served.content == jpeg
+
+
+def test_suspect_profile_lifecycle_and_case_link(client, auth_headers):
+    suffix = uuid.uuid4().hex[:8]
+    case_resp = client.post(
+        "/api/v1/cases",
+        json={"title": f"Suspect lifecycle {suffix}", "status": "open", "date": "2026-01-01"},
+        headers=auth_headers,
+    )
+    assert case_resp.status_code == 201
+    case_id = case_resp.json()["data"]["id"]
+
+    person_resp = client.post(
+        "/api/v1/people",
+        json={
+            "name": f"Person {suffix}",
+            "aliases": f"Alias {suffix}",
+            "age": 41,
+            "gender": "Female",
+            "height": 168.5,
+            "weight": 62.2,
+            "occupation": "Logistics coordinator",
+            "nationality": "Indian",
+            "address": "12 Example Street",
+            "phone": "+919800000001",
+            "email": f"person-{suffix}@example.in",
+            "notes": "Initial intelligence assessment",
+            "role": "suspect",
+            "risk": "high",
+            "status": "monitoring",
+        },
+        headers=auth_headers,
+    )
+    assert person_resp.status_code == 201
+    person = person_resp.json()["data"]
+    person_id = person["id"]
+    assert person["role"] == "SUSPECT"
+    assert person["risk"] == "HIGH"
+    assert person["status"] == "MONITORING"
+    assert person["height"] == 168.5
+
+    link_resp = client.post(
+        f"/api/v1/cases/{case_id}/entities",
+        json={"type": "person", "entity_id": person_id},
+        headers=auth_headers,
+    )
+    assert link_resp.status_code == 201
+    assert link_resp.json()["data"]["entity_id"] == person_id
+
+    case_entities_resp = client.get(f"/api/v1/cases/{case_id}/entities", headers=auth_headers)
+    assert case_entities_resp.status_code == 200
+    case_entities = case_entities_resp.json()["data"]
+    assert len(case_entities) == 1
+    assert case_entities[0]["id"] == person_id
+    assert case_entities[0]["occupation"] == "Logistics coordinator"
+    assert case_entities[0]["email"] == f"person-{suffix}@example.in"
+
+    update_resp = client.patch(
+        f"/api/v1/people/{person_id}",
+        json={"age": 42, "risk": "critical", "status": "detained", "notes": "Updated assessment"},
+        headers=auth_headers,
+    )
+    assert update_resp.status_code == 200
+    updated = update_resp.json()["data"]
+    assert updated["age"] == 42
+    assert updated["risk"] == "CRITICAL"
+    assert updated["status"] == "DETAINED"
+    assert updated["notes"] == "Updated assessment"
+
+    suspect_list_resp = client.get("/api/v1/people?role=SUSPECT&keyword=Person", headers=auth_headers)
+    assert suspect_list_resp.status_code == 200
+    assert any(item["id"] == person_id for item in suspect_list_resp.json()["data"])
+
+    delete_resp = client.delete(f"/api/v1/people/{person_id}", headers=auth_headers)
+    assert delete_resp.status_code == 200
+    assert client.get(f"/api/v1/people/{person_id}", headers=auth_headers).status_code == 404
+    remaining = client.get(f"/api/v1/cases/{case_id}/entities", headers=auth_headers).json()["data"]
+    assert remaining == []
+
+    client.delete(f"/api/v1/cases/{case_id}", headers=auth_headers)

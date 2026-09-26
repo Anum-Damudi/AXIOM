@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import Icon from '../components/Icon'
 import NexusCrimeLogo from '../components/NexusCrimeLogo'
+import AuroraBackground from '../components/background/AuroraBackground'
 
 export default function Login() {
   const { login, navigateTo } = useApp()
@@ -30,6 +31,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <AuroraBackground />
       <div className="login-bg">
         <div className="login-bg__grid" aria-hidden="true" />
         <div className="login-bg__glow" aria-hidden="true" />

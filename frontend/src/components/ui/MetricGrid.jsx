@@ -10,9 +10,9 @@ export default function MetricGrid({ items = [], minWidth = '12rem', className =
       role="list"
       aria-label={ariaLabel}
     >
-      {items.map((item) => (
+      {items.map((item, index) => (
         <div role="listitem" key={item.id || item.label}>
-          <MetricCard {...item} />
+          <MetricCard {...item} index={index} />
         </div>
       ))}
     </div>

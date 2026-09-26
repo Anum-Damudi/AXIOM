@@ -154,11 +154,13 @@ class CaseService:
         # 3. Evidence Events
         evidence = db.query(Evidence).filter(Evidence.case_id == case_id).all()
         for e in evidence:
+            evidence_name = e.title or e.file_name or e.id
+            evidence_type = e.evidence_type or e.mime_type or "metadata record"
             events.append(TimelineEvent(
                 id=f"EVT-EV-{e.id}",
-                timestamp=e.created_at.isoformat() if e.created_at else case.date,
+                timestamp=e.date or (e.created_at.isoformat() if e.created_at else case.date),
                 type="evidence_uploaded",
-                description=f"Evidence file '{e.file_name}' uploaded ({e.mime_type}).",
+                description=f"Evidence '{evidence_name}' logged ({evidence_type}).",
                 source="evidence"
             ))
 

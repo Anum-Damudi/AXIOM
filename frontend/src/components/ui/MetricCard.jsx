@@ -1,21 +1,25 @@
 import Icon from '../Icon'
+import AnimatedNumber from '../motion/AnimatedNumber'
 
 function toneClass(tone) {
   switch (tone) {
-    case 'high': return 'text-[var(--risk-high)] bg-[var(--risk-high-bg)] border-[color:var(--risk-high)]/30'
-    case 'medium': return 'text-[var(--risk-medium)] bg-[var(--risk-medium-bg)] border-[color:var(--risk-medium)]/30'
-    case 'low': return 'text-[var(--risk-low)] bg-[var(--risk-low-bg)] border-[color:var(--risk-low)]/30'
-    default: return 'text-[var(--accent)] bg-[var(--accent-glow)] border-[color:var(--border-accent)]'
+    case 'high': return 'metric-card__icon--high'
+    case 'medium': return 'metric-card__icon--medium'
+    case 'low': return 'metric-card__icon--low'
+    default: return ''
   }
 }
 
-export default function MetricCard({ label, value, icon, change, tone, onClick }) {
+// Renders the existing metric value — AnimatedNumber only eases the number
+// up to the value it was handed, it never invents or rounds one.
+export default function MetricCard({ label, value, icon, change, tone, onClick, index }) {
   const Comp = onClick ? 'button' : 'div'
   return (
     <Comp
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`metric-card group relative overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-5 text-left transition-all duration-200 ${
+      style={index === undefined ? undefined : { '--ax-i': index }}
+      className={`metric-card group relative overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] p-5 text-left ${
         onClick ? 'cursor-pointer hover:border-[color:var(--border-accent)] hover:bg-[var(--bg-card-hover)]' : ''
       }`}
     >
@@ -29,14 +33,14 @@ export default function MetricCard({ label, value, icon, change, tone, onClick }
             {label}
           </div>
           <div className="mt-2 text-3xl font-bold leading-none tracking-tight text-[var(--text-primary)] tabular-nums">
-            {value}
+            <AnimatedNumber value={value} />
           </div>
           {change && (
             <div className="mt-2 truncate text-[13px] text-[var(--text-secondary)]">{change}</div>
           )}
         </div>
         {icon && (
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${toneClass(tone)}`}>
+          <div className={`metric-card__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${toneClass(tone)}`}>
             <Icon name={icon} className="icon-sm" />
           </div>
         )}

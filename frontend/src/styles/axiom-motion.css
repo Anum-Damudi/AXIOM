@@ -1,0 +1,518 @@
+/* ==========================================================================
+   AXIOM — Motion System
+   --------------------------------------------------------------------------
+   Three-level motion language. Every animation here is either decorative
+   (background atmosphere) or a *reaction* to real application state, so
+   motion always communicates one of:
+
+        SYSTEM STATUS → INFORMATION → RELATIONSHIP → ACTION
+
+   Level 1 micro     100–200ms  buttons, icons, hover, inputs, badges
+   Level 2 component 200–400ms  cards, dropdowns, modals, drawers, disclosure
+   Level 3 system    400–800ms  page transitions, graph init, dashboard load
+
+   All motion is transform/opacity only (GPU friendly), respects the
+   reduced-motion tokens defined in axiom-tokens.css, and never blocks input.
+   ========================================================================== */
+
+/* ── Ambient keyframes ────────────────────────────────────────────────
+   Slow, non-repeating-feeling drifts used by the environment layers. */
+@keyframes ax-drift-a {
+  0%   { transform: translate3d(-1.4%, -0.8%, 0) scale(1.02); }
+  50%  { transform: translate3d(1.6%, 1.1%, 0) scale(1.07); }
+  100% { transform: translate3d(-0.4%, 1.6%, 0) scale(1.03); }
+}
+
+@keyframes ax-drift-b {
+  0%   { transform: translate3d(1.2%, 0.6%, 0) scale(1.06); }
+  50%  { transform: translate3d(-1.5%, -1%, 0) scale(1.01); }
+  100% { transform: translate3d(0.6%, -1.4%, 0) scale(1.05); }
+}
+
+@keyframes ax-grid-pan {
+  0%   { background-position: 0 0, 0 0; }
+  50%  { background-position: 48px -24px, -24px 48px; }
+  100% { background-position: 96px 0, 0 96px; }
+}
+
+@keyframes ax-scan-sweep {
+  0%   { transform: translate3d(0, -100%, 0); opacity: 0; }
+  8%   { opacity: 0.5; }
+  92%  { opacity: 0.5; }
+  100% { transform: translate3d(0, 100%, 0); opacity: 0; }
+}
+
+/* Faint horizontal data-line that travels across a panel header */
+@keyframes ax-data-line {
+  0%   { transform: translateX(-110%); opacity: 0; }
+  12%  { opacity: 0.85; }
+  88%  { opacity: 0.85; }
+  100% { transform: translateX(110%); opacity: 0; }
+}
+
+/* ── Status / activity keyframes ──────────────────────────────────────── */
+@keyframes ax-pulse-ring {
+  0%   { transform: scale(1); opacity: 0.55; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+@keyframes ax-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+@keyframes ax-pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.72); opacity: 0.6; }
+}
+
+/* Reserved for genuinely critical signals only: critical risk badges, the
+   unread-notification dot, and error toasts. Deliberately slower and softer
+   than a UI spinner so it reads as ambient urgency, not activity. */
+@keyframes ax-pulse-critical {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.48; }
+}
+
+@keyframes ax-caret-blink {
+  0%, 46%   { opacity: 1; }
+  54%, 100% { opacity: 0.15; }
+}
+
+/* ── Entrance keyframes ───────────────────────────────────────────────── */
+@keyframes ax-rise-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ax-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ax-slide-in-left {
+  from { opacity: 0; transform: translate3d(-14px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ax-slide-in-right {
+  from { opacity: 0; transform: translate3d(18px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ax-panel-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.994); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes ax-unfold {
+  from { opacity: 0; transform: translate3d(0, -6px, 0) scaleY(0.94); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scaleY(1); }
+}
+
+/* ==========================================================================
+   LEVEL 3 — SYSTEM MOTION (page transitions, graph init, dashboard load)
+   ========================================================================== */
+
+/* Page transition host. Keyed by the active view so React remounts the
+   subtree and the entrance choreography replays on every navigation. */
+.ax-page-transition {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-width: 0;
+  animation: ax-panel-in var(--ax-dur-system) var(--ax-ease-entrance) both;
+}
+
+/* Directional flavour: applied by the transition wrapper when the operator
+   moved forward or back through the navigation stack. */
+.ax-page-transition--forward {
+  animation-name: ax-slide-in-right;
+}
+
+.ax-page-transition--back {
+  animation-name: ax-slide-in-left;
+}
+
+/* Slightly deeper staging for the heaviest views (graph, map, analytics) */
+.ax-page-transition--deep {
+  animation-duration: var(--ax-dur-system-slow);
+}
+
+/* A soft luminous wash that crosses the viewport once per navigation —
+   reads as the console "re-acquiring" the new dataset. */
+.ax-page-transition::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    var(--accent-glow) 46%,
+    var(--accent-glow) 54%,
+    transparent 100%
+  );
+  opacity: 0;
+  animation: ax-page-wash 760ms var(--ax-ease-standard) both;
+}
+
+@keyframes ax-page-wash {
+  0%   { opacity: 0; transform: translate3d(-30%, 0, 0); }
+  22%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translate3d(30%, 0, 0); }
+}
+
+/* ==========================================================================
+   STAGGERED CONTENT REVEAL
+   --------------------------------------------------------------------------
+   Opt-in choreography. A parent sets `--ax-i` (0-based position) on each
+   child; delay is derived from the token so the whole system shares one
+   cadence and the entire sequence is capped by --ax-stagger-max.
+
+   DOM order expresses the reveal order:
+     page title → toolbar → summary cards → tables → secondary panels
+   ========================================================================== */
+
+.ax-reveal {
+  animation: ax-rise-in var(--ax-dur-component) var(--ax-ease-entrance) both;
+  animation-delay: calc(var(--ax-i, 0) * var(--ax-stagger-step));
+}
+
+.ax-reveal--fade {
+  animation-name: ax-fade-in;
+}
+
+.ax-reveal--panel {
+  animation-name: ax-panel-in;
+  animation-duration: var(--ax-dur-component-slow);
+}
+
+.ax-reveal--left {
+  animation-name: ax-slide-in-left;
+}
+
+.ax-reveal--right {
+  animation-name: ax-slide-in-right;
+}
+
+/* Clamp the per-item delay so a long list never feels sluggish. */
+.ax-stagger {
+  --ax-i: 0;
+}
+
+.ax-stagger > * {
+  animation: ax-rise-in var(--ax-dur-component) var(--ax-ease-entrance) both;
+  animation-delay: min(
+    calc(var(--ax-i, 0) * var(--ax-stagger-step)),
+    var(--ax-stagger-max)
+  );
+}
+
+/* Explicit index helper for lists rendered from data (no :nth-child games). */
+.ax-stagger-item {
+  animation: ax-rise-in var(--ax-dur-component) var(--ax-ease-entrance) both;
+  animation-delay: min(
+    calc(var(--ax-i, 0) * var(--ax-stagger-step)),
+    var(--ax-stagger-max)
+  );
+}
+
+/* Disclosure / expandable content */
+.ax-disclosure {
+  transform-origin: top center;
+  animation: ax-unfold var(--ax-dur-component) var(--ax-ease-entrance) both;
+}
+
+/* ==========================================================================
+   LEVEL 1 — MICRO MOTION (buttons, icons, inputs, badges, dots)
+   ========================================================================== */
+
+.ax-interactive {
+  transition:
+    transform var(--ax-dur-micro) var(--ax-ease-standard),
+    box-shadow var(--ax-dur-component) var(--ax-ease-standard),
+    border-color var(--ax-dur-micro) var(--ax-ease-standard),
+    background-color var(--ax-dur-micro) var(--ax-ease-standard),
+    color var(--ax-dur-micro) var(--ax-ease-standard);
+  will-change: transform;
+}
+
+.ax-interactive:hover {
+  transform: translate3d(0, var(--ax-lift-y), 0);
+}
+
+.ax-interactive:active {
+  transform: translate3d(0, 0, 0) scale(0.985);
+  transition-duration: var(--ax-dur-micro-fast);
+}
+
+/* Status dots — a small, non-distracting sign of life. */
+.ax-dot {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ax-dot--pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: ax-pulse-ring 2.4s var(--ax-ease-standard) infinite;
+}
+
+/* Restrained pulse used only for CRITICAL alerts. */
+.ax-pulse-critical {
+  animation: ax-breathe 2.6s var(--ax-ease-standard) infinite;
+}
+
+.ax-dot--blink {
+  animation: ax-pulse-dot 2.8s var(--ax-ease-standard) infinite;
+}
+
+/* Caret for "live" / streaming readouts */
+.ax-caret {
+  display: inline-block;
+  width: 0.42em;
+  height: 1em;
+  margin-left: 0.34em;
+  vertical-align: -0.14em;
+  background: currentColor;
+  animation: ax-caret-blink 1.1s steps(1, end) infinite;
+}
+
+/* ==========================================================================
+   LEVEL 2 — COMPONENT MOTION (cards, panels, modals, drawers, tables)
+   ========================================================================== */
+
+/* Card lift. Deliberately shallow — no exaggerated scaling. */
+.ax-card-hover {
+  transition:
+    transform var(--ax-dur-component) var(--ax-ease-standard),
+    box-shadow var(--ax-dur-component) var(--ax-ease-standard),
+    border-color var(--ax-dur-micro) var(--ax-ease-standard),
+    background-color var(--ax-dur-micro) var(--ax-ease-standard);
+}
+
+.ax-card-hover:hover {
+  transform: translate3d(0, var(--ax-lift-y-strong), 0);
+}
+
+/* Overlay entrance used by modals, search, command palette */
+.ax-overlay-in {
+  animation: ax-fade-in var(--ax-dur-component) var(--ax-ease-standard) both;
+}
+
+.ax-surface-in {
+  animation: ax-panel-in var(--ax-dur-component-slow) var(--ax-ease-entrance) both;
+}
+
+/* ==========================================================================
+   LEVEL 3 — GRAPH INITIALISATION
+   --------------------------------------------------------------------------
+   Progressive node appearance and edge draw-in. The graph component stamps
+   per-element delays from its own render order; nothing about the layout,
+   relationships or filtering is altered.
+   ========================================================================== */
+
+@keyframes ax-node-in {
+  from { opacity: 0; transform: scale(0.72); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ax-node-label-in {
+  from { opacity: 0; transform: translate3d(0, -5px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ax-edge-draw {
+  from { stroke-dashoffset: var(--ax-edge-len, 400); }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes ax-focus-ring {
+  0%   { stroke-dashoffset: 0; opacity: 0.9; transform: scale(0.92); }
+  50%  { opacity: 0.5; }
+  100% { stroke-dashoffset: -180; opacity: 0.9; transform: scale(1.06); }
+}
+
+@keyframes ax-flow {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ==========================================================================
+   ENVIRONMENT — layered atmosphere, never a flat static image
+   ========================================================================== */
+
+/* Extra depth strata drawn behind the application shell. Each layer is a
+   gradient or a tiny tiled pattern animated with transform, so the GPU
+   never has to repaint a large surface. */
+.ax-env-deep {
+  position: fixed;
+  inset: -12%;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 58% 48% at 78% 8%, rgba(0, 70, 113, 0.4), transparent 72%),
+    radial-gradient(ellipse 46% 42% at 12% 88%, rgba(24, 135, 168, 0.16), transparent 74%);
+  animation: ax-drift-a 44s var(--ax-ease-standard) infinite alternate;
+}
+
+.ax-env-mid {
+  position: fixed;
+  inset: -12%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 38% 34% at 50% 46%, rgba(127, 195, 232, 0.09), transparent 70%),
+    linear-gradient(180deg, rgba(0, 70, 113, 0.1) 0%, transparent 46%);
+  animation: ax-drift-b 62s var(--ax-ease-standard) infinite alternate;
+}
+
+/* Horizon rule: a single illuminated line that grounds the composition. */
+.ax-env-horizon {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(194, 232, 255, 0.28) 22%,
+    rgba(194, 232, 255, 0.42) 50%,
+    rgba(194, 232, 255, 0.28) 78%,
+    transparent 100%
+  );
+}
+
+/* Faint vertical data-lines that travel very slowly down the viewport. */
+.ax-env-datalines {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    linear-gradient(90deg, transparent 0 159px, rgba(114, 152, 175, 0.05) 160px, transparent 161px),
+    linear-gradient(90deg, transparent 0 319px, rgba(114, 152, 175, 0.035) 320px, transparent 321px);
+  background-size: 100% 100%;
+  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+}
+
+/* Scan sweep used only on hero + graph surfaces (never on dense tables). */
+.ax-scan::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(194, 232, 255, 0.055) 48%,
+    rgba(194, 232, 255, 0.075) 50%,
+    rgba(194, 232, 255, 0.055) 52%,
+    transparent 100%
+  );
+  animation: ax-scan-sweep 9s var(--ax-ease-standard) infinite;
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   --------------------------------------------------------------------------
+   Level 3 is removed, ambience freezes, and decorative loops stop. Level 1
+   micro feedback (hover colour, focus ring, press scale) is intentionally
+   kept so controls never feel dead.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-page-transition,
+  .ax-reveal,
+  .ax-stagger > *,
+  .ax-stagger-item,
+  .ax-disclosure,
+  .ax-overlay-in,
+  .ax-surface-in {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .ax-page-transition::after {
+    display: none;
+  }
+
+  .ax-env-deep,
+  .ax-env-mid,
+  .ax-env-datalines,
+  .ax-scan::before,
+  .ax-dot--pulse::after,
+  .ax-pulse-critical,
+  .ax-dot--blink,
+  .ax-caret {
+    animation: none !important;
+  }
+
+  .ax-card-hover:hover,
+  .ax-interactive:hover {
+    transform: none;
+  }
+
+  .ax-node,
+  .ax-edge,
+  .ax-label-in {
+    animation: none !important;
+  }
+}
+
+[data-reduce-motion='true'] .ax-page-transition,
+[data-reduce-motion='true'] .ax-reveal,
+[data-reduce-motion='true'] .ax-stagger > *,
+[data-reduce-motion='true'] .ax-stagger-item,
+[data-reduce-motion='true'] .ax-disclosure,
+[data-reduce-motion='true'] .ax-overlay-in,
+[data-reduce-motion='true'] .ax-surface-in {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+[data-reduce-motion='true'] .ax-page-transition::after {
+  display: none;
+}
+
+[data-reduce-motion='true'] .ax-env-deep,
+[data-reduce-motion='true'] .ax-env-mid,
+[data-reduce-motion='true'] .ax-env-datalines,
+[data-reduce-motion='true'] .ax-scan::before,
+[data-reduce-motion='true'] .ax-dot--pulse::after,
+[data-reduce-motion='true'] .ax-pulse-critical,
+[data-reduce-motion='true'] .ax-dot--blink,
+[data-reduce-motion='true'] .ax-caret {
+  animation: none !important;
+}
+
+[data-reduce-motion='true'] .ax-card-hover:hover,
+[data-reduce-motion='true'] .ax-interactive:hover {
+  transform: none;
+}
+
+[data-reduce-motion='true'] .ax-node,
+[data-reduce-motion='true'] .ax-edge,
+[data-reduce-motion='true'] .ax-node,
+[data-reduce-motion='true'] .ax-edge,
+[data-reduce-motion='true'] .ax-label-in {
+  animation: none !important;
+}

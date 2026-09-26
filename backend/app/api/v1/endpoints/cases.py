@@ -2,6 +2,7 @@ import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.core.database import get_db
 from app.models import Case, Person, Vehicle, Location, Relationship, User
 from app.schemas import (
@@ -111,15 +112,45 @@ def add_entity_to_case(
     entity_obj = None
     entity_type = (entity_in.type or "person").lower()
     if entity_type == "person":
-        name = (entity_in.name or "").strip()
-        if not name:
-            return ApiResponse(success=False, data={"case_id": case_id, "entity": None, "related_cases": []})
-        entity_obj = db.query(Person).filter(Person.name == name).first()
-        if not entity_obj:
-            entity_obj = Person(id=f"P{uuid.uuid4().hex[:6].upper()}", name=name, role=entity_in.role or "associate", age=entity_in.age)
-            db.add(entity_obj)
-            db.commit()
-            db.refresh(entity_obj)
+        entity_obj = None
+        if entity_in.entity_id:
+            entity_obj = db.query(Person).filter(Person.id == entity_in.entity_id).first()
+        if entity_obj is None:
+            name = (entity_in.name or "").strip()
+            if not name:
+                return ApiResponse(success=False, data={"case_id": case_id, "entity": None, "related_cases": []})
+            entity_obj = db.query(Person).filter(func.lower(Person.name) == name.lower()).first()
+        if entity_obj is None:
+            entity_obj = Person(
+                id=f"P{uuid.uuid4().hex[:6].upper()}",
+                name=name,
+                role=(entity_in.role or "associate").upper(),
+                age=entity_in.age,
+                gender=entity_in.gender,
+                height=entity_in.height,
+                weight=entity_in.weight,
+                occupation=entity_in.occupation,
+                nationality=entity_in.nationality,
+                address=entity_in.address,
+                phone=entity_in.phone,
+                email=entity_in.email,
+                notes=entity_in.notes,
+                aliases=entity_in.aliases,
+                risk=(entity_in.risk or "MEDIUM").upper(),
+                status=(entity_in.status or "ACTIVE").upper(),
+                normalized_name=name.lower(),
+            )
+        else:
+            person_values = entity_in.model_dump(exclude_unset=True, exclude={"type", "entity_id", "name", "plate_number"})
+            for field in ("role", "risk", "status"):
+                if field in person_values and person_values[field]:
+                    person_values[field] = str(person_values[field]).upper()
+            for field, value in person_values.items():
+                if hasattr(entity_obj, field) and value is not None:
+                    setattr(entity_obj, field, value.strip() if isinstance(value, str) and field not in {"role", "risk", "status"} else value)
+        db.add(entity_obj)
+        db.commit()
+        db.refresh(entity_obj)
     elif entity_type == "vehicle":
         plate = (entity_in.plate_number or entity_in.name or "").strip().upper()
         if not plate:
@@ -207,7 +238,27 @@ def get_case_entities(
             p = db.query(Person).filter(Person.id == eid).first()
             if p and p.id not in seen:
                 seen.add(p.id)
-                entities_list.append({"id": p.id, "name": p.name, "type": "Person", "role": p.role or "associate"})
+                entities_list.append({
+                    "id": p.id,
+                    "name": p.name,
+                    "type": "Person",
+                    "role": p.role or "associate",
+                    "age": p.age,
+                    "gender": p.gender,
+                    "height": p.height,
+                    "weight": p.weight,
+                    "occupation": p.occupation,
+                    "nationality": p.nationality,
+                    "address": p.address,
+                    "phone": p.phone,
+                    "email": p.email,
+                    "notes": p.notes,
+                    "aliases": p.aliases,
+                    "photo_path": p.photo_path,
+                    "risk": p.risk or "MEDIUM",
+                    "status": p.status or "ACTIVE",
+                    "created_at": p.created_at.isoformat() if p.created_at else None,
+                })
         elif eid.startswith("V"):
             v = db.query(Vehicle).filter(Vehicle.id == eid).first()
             if v and v.id not in seen:

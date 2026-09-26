@@ -23,10 +23,19 @@ import Phones from './pages/Phones'
 import Ledger from './pages/Ledger'
 import AccessRestricted from './pages/AccessRestricted'
 import AuroraBackground from './components/background/AuroraBackground'
+import PageTransition from './components/motion/PageTransition'
+import useDirectionalView from './hooks/useDirectionalView'
 import './App.css'
+import './styles/axiom-tokens.css'
+import './styles/axiom-motion.css'
+import './styles/axiom-components.css'
 
 // Views that require write/administrative privilege (outside OFFICER read-only scope).
 const PRIVILEGED_VIEWS = new Set(['ledger', 'settings'])
+
+// Reading order used only to pick the direction flavour of the page
+// transition. It has no effect on routing, access control or what renders.
+const VIEW_ORDER = ['dashboard', 'network', 'cases', 'suspects', 'evidence', 'phones', 'intelligence', 'map', 'analytics', 'reports', 'ledger', 'settings']
 
 function AppContent() {
   const {
@@ -38,6 +47,14 @@ function AppContent() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme || 'dark')
   }, [settings.theme])
+
+  // Presentation only: lets the motion system honour the app's own
+  // "reduce animations" preference alongside the OS-level setting.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-reduce-motion', settings.reduceAnimations ? 'true' : 'false')
+  }, [settings.reduceAnimations])
+
+  const pageDirection = useDirectionalView(activeView, VIEW_ORDER)
 
   if (page === 'landing') return <><LandingPage /><ToastContainer toasts={toasts} /></>
   if (page === 'login' || !isAuthenticated) return <><Login /><ToastContainer toasts={toasts} /></>
@@ -71,12 +88,20 @@ function AppContent() {
 
   return (
     <div className="app">
+      <div className="ax-env-deep" aria-hidden="true" />
+      <div className="ax-env-mid" aria-hidden="true" />
+      <div className="ax-env-datalines" aria-hidden="true" />
       <AuroraBackground />
       <div className="aurora-overlay" aria-hidden="true" />
+      <div className="ax-env-horizon" aria-hidden="true" />
       <Sidebar />
       <div className="main">
         <TopBar />
-        <main className="content">{renderPage()}</main>
+        <main className="content">
+          <PageTransition key={activeView} viewKey={activeView} direction={pageDirection}>
+            {renderPage()}
+          </PageTransition>
+        </main>
       </div>
       <SearchOverlay />
       <NotificationPanel />

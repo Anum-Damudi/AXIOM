@@ -8,10 +8,21 @@ class Person(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     age = Column(Integer, nullable=True)
-    role = Column(String, default="associate", index=True)  # suspect, witness, associate, victim
+    role = Column(String, default="associate", index=True)
     normalized_name = Column(String, nullable=True, index=True)
-    aliases = Column(String, nullable=True)  # Comma-separated or JSON string
-    photo_path = Column(String, nullable=True)  # Stored suspect photo (relative to UPLOAD_DIR)
+    aliases = Column(String, nullable=True)
+    photo_path = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    height = Column(Float, nullable=True)
+    weight = Column(Float, nullable=True)
+    occupation = Column(String, nullable=True)
+    nationality = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+    risk = Column(String, default="MEDIUM", index=True)
+    status = Column(String, default="ACTIVE", index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Vehicle(Base):

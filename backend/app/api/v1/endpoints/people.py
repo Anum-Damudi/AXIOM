@@ -2,10 +2,11 @@ import uuid
 import os
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Person, Relationship, Case, User
-from app.schemas import PersonCreate, PersonResponse, PersonConnectionsResponse, ApiResponse, MetaPagination
+from app.schemas import PersonCreate, PersonUpdate, PersonResponse, PersonConnectionsResponse, ApiResponse, MetaPagination
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.core.security import get_current_user, require_roles
 from app.core.config import settings
@@ -14,6 +15,34 @@ router = APIRouter()
 
 READ_ROLES = require_roles("ADMIN", "INVESTIGATOR", "OFFICER")
 WRITE_ROLES = require_roles("ADMIN", "INVESTIGATOR")
+PERSON_FIELDS = (
+    "role", "age", "gender", "height", "weight", "occupation", "nationality",
+    "address", "phone", "email", "notes", "aliases", "risk", "status",
+)
+
+
+def _clean_person_values(values: dict) -> dict:
+    cleaned = {}
+    for field in PERSON_FIELDS:
+        if field not in values:
+            continue
+        value = values[field]
+        if isinstance(value, str):
+            value = value.strip() or None
+        if field in {"role", "risk", "status"} and value:
+            value = value.upper()
+        cleaned[field] = value
+    return cleaned
+
+
+def _apply_person_values(person: Person, values: dict) -> bool:
+    changed = False
+    for field, value in _clean_person_values(values).items():
+        if getattr(person, field) != value:
+            setattr(person, field, value)
+            changed = True
+    return changed
+
 
 @router.post("", response_model=ApiResponse[PersonResponse], status_code=status.HTTP_201_CREATED, tags=["People"])
 def create_person(
@@ -22,17 +51,31 @@ def create_person(
     current_user: User = Depends(WRITE_ROLES)
 ):
     """Create a person entity or reuse the same name if it already exists (Admin/Investigator)."""
-    existing = db.query(Person).filter(Person.name == person_in.name).first()
+    name = person_in.name.strip()
+    normalized_name = name.lower()
+    existing = db.query(Person).filter(func.lower(Person.name) == normalized_name).first()
+    values = person_in.model_dump(exclude_unset=True)
     if existing:
+        changed = _apply_person_values(existing, values)
+        if name != existing.name:
+            existing.name = name
+            changed = True
+        if normalized_name != existing.normalized_name:
+            existing.normalized_name = normalized_name
+            changed = True
+        if changed:
+            db.commit()
+            db.refresh(existing)
         return ApiResponse(success=True, data=PersonResponse.model_validate(existing))
 
     person = Person(
         id=f"P{uuid.uuid4().hex[:6].upper()}",
-        name=person_in.name,
-        role=person_in.role or "associate",
-        age=person_in.age,
-        normalized_name=person_in.name.lower()
+        name=name,
+        normalized_name=normalized_name,
     )
+    _apply_person_values(person, values)
+    if not person.role:
+        person.role = "associate"
     db.add(person)
     db.commit()
     db.refresh(person)
@@ -53,10 +96,16 @@ def get_people(
     """List people entities with filtering and pagination."""
     query = db.query(Person)
     if role:
-        query = query.filter(Person.role == role)
+        query = query.filter(func.lower(Person.role) == role.strip().lower())
     if keyword:
-        pattern = f"%{keyword}%"
-        query = query.filter((Person.name.ilike(pattern)) | (Person.id.ilike(pattern)))
+        pattern = f"%{keyword.strip()}%"
+        query = query.filter(
+            (Person.name.ilike(pattern))
+            | (Person.id.ilike(pattern))
+            | (Person.aliases.ilike(pattern))
+            | (Person.occupation.ilike(pattern))
+            | (Person.nationality.ilike(pattern))
+        )
 
     total = query.count()
     people = query.offset((page - 1) * limit).limit(limit).all()
@@ -163,7 +212,7 @@ def delete_person_photo(
 @router.patch("/{person_id}", response_model=ApiResponse[PersonResponse], tags=["People"])
 def update_person(
     person_id: str,
-    person_in: PersonCreate,
+    person_in: PersonUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(WRITE_ROLES)
 ):
@@ -173,12 +222,20 @@ def update_person(
         raise NotFoundException(message=f"Person {person_id} not found", code="PERSON_NOT_FOUND")
 
     update_data = person_in.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(person, field, value)
     if "name" in update_data and update_data.get("name"):
-        person.normalized_name = str(person.name).lower()
-    db.commit()
-    db.refresh(person)
+        update_data["name"] = update_data["name"].strip()
+    changed = _apply_person_values(person, update_data)
+    if "name" in update_data and update_data["name"] and update_data["name"] != person.name:
+        person.name = update_data["name"]
+        changed = True
+    if "name" in update_data and person.name:
+        normalized_name = person.name.lower()
+        if normalized_name != person.normalized_name:
+            person.normalized_name = normalized_name
+            changed = True
+    if changed:
+        db.commit()
+        db.refresh(person)
 
     from app.services.audit_service import AuditService
     AuditService.log_action(db, action="UPDATE_PERSON", user_id=current_user.id, resource_type="person", resource_id=person_id)
@@ -194,6 +251,16 @@ def delete_person(
     person = db.query(Person).filter(Person.id == person_id).first()
     if not person:
         raise NotFoundException(message=f"Person {person_id} not found", code="PERSON_NOT_FOUND")
+    if person.photo_path:
+        photo_path = os.path.join(settings.UPLOAD_DIR, person.photo_path)
+        if os.path.exists(photo_path):
+            try:
+                os.remove(photo_path)
+            except OSError:
+                pass
+    db.query(Relationship).filter(
+        (Relationship.source == person_id) | (Relationship.target == person_id)
+    ).delete(synchronize_session=False)
     db.delete(person)
     db.commit()
 

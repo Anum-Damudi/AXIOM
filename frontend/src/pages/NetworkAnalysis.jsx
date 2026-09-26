@@ -12,6 +12,11 @@ const ENTITY_ROLES = ['Suspect', 'Witness', 'Victim', 'Investigator/Official', '
 const RELATIONSHIP_TYPES = ['Associated With', 'Uses', 'Communicates With', 'Owns', 'Located At', 'Works At', 'Transacted With', 'Linked To', 'Connected To']
 const RISK_LEVELS = ['all', 'high', 'medium', 'low']
 const TYPE_FILTER_OPTIONS = ['all', 'PERSON', 'ORGANIZATION', 'VEHICLE', 'LOCATION', 'CONTACT', 'OTHER', 'PHONE', 'BANK', 'EVIDENCE', 'CASE']
+const INITIAL_NODE_COUNT = 5
+const NODE_DISCLOSURE_STEPS = [5, 10, 20]
+const RISK_PRIORITY = { CRITICAL: 60, HIGH: 42, MEDIUM: 24, LOW: 8 }
+const ROLE_PRIORITY = { SUSPECT: 32, VICTIM: 24, WITNESS: 20, 'INVESTIGATOR/OFFICIAL': 12, CONTACT: 8 }
+const STATUS_PRIORITY = { ACTIVE: 10, MONITORING: 8, DETAINED: 14, CLEARED: 1, INVESTIGATING: 12, ANALYZING: 12, COMPLETED: 0 }
 
 const REL_TYPE_MAP = {
   'Associated With': 'ASSOCIATED_WITH',
@@ -36,6 +41,39 @@ function confidenceColor(conf) {
   if (conf >= 80) return 'green'
   if (conf >= 60) return 'yellow'
   return 'orange'
+}
+
+function recencyScore(value) {
+  if (!value) return 0
+  const timestamp = new Date(value).getTime()
+  if (Number.isNaN(timestamp)) return 0
+  const days = Math.max(0, (Date.now() - timestamp) / 86400000)
+  return Math.max(0, 18 - days * 0.35)
+}
+
+function getNextNodeCount(currentCount, totalCount) {
+  if (totalCount <= currentCount) return currentCount
+  const nextStep = NODE_DISCLOSURE_STEPS.find((step) => step > currentCount)
+  return Math.min(totalCount, nextStep || totalCount)
+}
+
+function graphPriority(entity, caseRelationships, focusId) {
+  const related = caseRelationships.filter((relationship) => relationship.fromId === entity.id || relationship.toId === entity.id)
+  const confidence = related.length
+    ? related.reduce((total, relationship) => total + Number(relationship.confidence || (relationship.status === 'CONFIRMED' ? 85 : 55)), 0) / related.length
+    : 0
+  const role = ROLE_PRIORITY[String(entity.role || '').toUpperCase()] || 0
+  const risk = RISK_PRIORITY[String(entity.risk || 'LOW').toUpperCase()] || 0
+  const status = STATUS_PRIORITY[String(entity.status || 'ACTIVE').toUpperCase()] || 0
+  return Math.round(
+    role * 1.5
+    + risk
+    + status
+    + related.length * 12
+    + confidence * 0.35
+    + recencyScore(entity.updatedAt || entity.createdAt)
+    + (entity.id === focusId ? 100 : 0),
+  )
 }
 
 function AddEntityModal({ open, onClose, onAdd, caseId }) {
@@ -141,7 +179,7 @@ function AddRelationshipModal({ open, onClose, onAdd, caseId, entities }) {
   )
 }
 
-function SuggestionCard({ suggestion, onAccept, onReject }) {
+function SuggestionCard({ suggestion, onAccept, onReject, canEdit }) {
   const { id, fromName, toName, type, confidence, reason, status } = suggestion
   const confColor = confidenceColor(confidence)
   const relLabel = REL_DISPLAY[type] || type?.replace(/_/g, ' ') || 'Unknown'
@@ -165,7 +203,7 @@ function SuggestionCard({ suggestion, onAccept, onReject }) {
         <span className="suggestion-card__entity">{toName}</span>
       </div>
       {reason && <p className="suggestion-card__reason">{reason}</p>}
-      {isPending && (
+      {isPending && canEdit && (
         <div className="suggestion-card__actions">
           <button type="button" className="btn btn--primary btn--sm" onClick={() => onAccept(id)}>
             <Icon name="check" className="icon-xs" /> Accept
@@ -181,7 +219,7 @@ function SuggestionCard({ suggestion, onAccept, onReject }) {
 
 export default function NetworkAnalysis() {
   const {
-    cases, entities, relationships, aiSuggestions, analyzing, analysisStep,
+    user, cases, entities, relationships, aiSuggestions, analyzing, analysisStep,
     selectedCaseId: contextCaseId, addEntity, addRelationship, runAIAnalysis,
     acceptSuggestion, rejectSuggestion, addEntityModalOpen, setAddEntityModalOpen,
     addRelationshipModalOpen, setAddRelationshipModalOpen, selectedNetworkNode, setSelectedNetworkNode,
@@ -199,7 +237,9 @@ export default function NetworkAnalysis() {
   const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const canvasRef = useRef(null)
   const [filters, setFilters] = useState({ type: 'all', risk: 'all' })
+  const [visibleNodeCount, setVisibleNodeCount] = useState(INITIAL_NODE_COUNT)
   const prevCaseIdRef = useRef(null)
+  const canEdit = user?.roleKey !== 'officer'
 
   const contextCase = useMemo(
     () => cases.find(c => c.id === contextCaseId) || null,
@@ -215,7 +255,9 @@ export default function NetworkAnalysis() {
         prevCaseIdRef.current = next.id
         setSearchEntity('')
         setFilters({ type: 'all', risk: 'all' })
+        setVisibleNodeCount(INITIAL_NODE_COUNT)
         setSelectedNetworkNode(null)
+
       }
     })
     return () => window.cancelAnimationFrame(frame)
@@ -245,19 +287,24 @@ export default function NetworkAnalysis() {
     [caseSuggestions]
   )
 
+  const graphNodes = useMemo(() => caseEntities.map(e => ({
+    id: e.id, label: e.name, type: e.type?.toUpperCase() || 'OTHER',
+    risk: e.risk || 'LOW', entityId: e.id,
+    priorityScore: graphPriority(e, caseRelationships, networkFocusEntity),
+  })).sort((a, b) => b.priorityScore - a.priorityScore || String(b.label).localeCompare(String(a.label))), [caseEntities, caseRelationships, networkFocusEntity])
+
   useEffect(() => {
     if (!networkFocusEntity) return
     const frame = window.requestAnimationFrame(() => {
       const ent = caseEntities.find(e => e.id === networkFocusEntity)
-      if (ent) setSelectedNetworkNode(ent.id)
+      if (ent) {
+        const rank = graphNodes.findIndex(node => node.id === ent.id)
+        if (rank >= visibleNodeCount) setVisibleNodeCount(Math.min(graphNodes.length, rank + 1))
+        setSelectedNetworkNode(ent.id)
+      }
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [networkFocusEntity, caseEntities, setSelectedNetworkNode])
-
-  const graphNodes = useMemo(() => caseEntities.map(e => ({
-    id: e.id, label: e.name, type: e.type?.toUpperCase() || 'OTHER',
-    risk: e.risk || 'LOW', entityId: e.id,
-  })), [caseEntities])
+  }, [networkFocusEntity, caseEntities, graphNodes, visibleNodeCount, setSelectedNetworkNode])
 
   const graphEdges = useMemo(() => {
     const confirmed = caseRelationships.map(r => ({
@@ -278,9 +325,26 @@ export default function NetworkAnalysis() {
     [selectedNetworkNode, caseEntities]
   )
 
-  const clearFilters = () => { setFilters({ type: 'all', risk: 'all' }); setSearchEntity('') }
+  const clearFilters = () => { setFilters({ type: 'all', risk: 'all' }); setSearchEntity(''); setVisibleNodeCount(INITIAL_NODE_COUNT) }
 
   const handleNodeClick = (node) => { setSelectedNetworkNode(node.id) }
+
+  const selectEntity = (entityId) => {
+    const rank = graphNodes.findIndex((node) => node.id === entityId)
+    if (rank >= visibleNodeCount) setVisibleNodeCount(Math.min(graphNodes.length, Math.max(INITIAL_NODE_COUNT, rank + 1)))
+    setSelectedNetworkNode(entityId)
+  }
+
+  const handleEdgeClick = (edge) => {
+    const relation = edge.type || edge.label || 'Relationship'
+    const from = caseEntities.find((entity) => entity.id === edge.from)?.name || edge.from
+    const to = caseEntities.find((entity) => entity.id === edge.to)?.name || edge.to
+    showToast(`${from} ${String(relation).replace(/_/g, ' ').toLowerCase()} ${to}`, 'info')
+  }
+
+  const nextNodeCount = getNextNodeCount(visibleNodeCount, graphNodes.length)
+  const showMoreNodes = () => setVisibleNodeCount(nextNodeCount)
+  const resetNodeCount = () => setVisibleNodeCount(INITIAL_NODE_COUNT)
 
   const handleResetView = () => { setZoom(1); setPanX(0); setPanY(0); setRotating(false) }
 
@@ -344,9 +408,11 @@ export default function NetworkAnalysis() {
             <select value={selectedCaseLocal?.id || ''} onChange={(e) => {
               const c = cases.find(cs => cs.id === e.target.value)
               setSelectedCaseLocal(c || cases[0])
-              setSelectedNetworkNode(null)
-              setSearchEntity('')
-              setFilters({ type: 'all', risk: 'all' })
+               setSelectedNetworkNode(null)
+               setSearchEntity('')
+               setFilters({ type: 'all', risk: 'all' })
+               setVisibleNodeCount(INITIAL_NODE_COUNT)
+
             }}>
               {cases.map(c => <option key={c.id} value={c.id}>{c.id} — {c.title}</option>)}
             </select>
@@ -387,44 +453,66 @@ export default function NetworkAnalysis() {
               {RISK_LEVELS.map(r => <option key={r} value={r}>{r === 'all' ? 'All Levels' : r.toUpperCase()}</option>)}
             </select>
           </label>
-          <button type="button" className="btn btn--ghost btn--sm btn--full" onClick={clearFilters}>Clear Filters</button>
+           <button type="button" className="btn btn--ghost btn--sm btn--full" onClick={clearFilters}>Clear Filters</button>
 
-          {caseEntities.length > 0 && (
+           <div className="network-discovery">
+             <div className="network-discovery__heading">
+               <span>Discovery view</span>
+               <strong>{Math.min(visibleNodeCount, graphNodes.length)} / {graphNodes.length} nodes</strong>
+             </div>
+             <p>Highest-priority entities appear first. Expand as the investigation develops.</p>
+             {graphNodes.length > visibleNodeCount ? (
+               <button type="button" className="btn btn--accent btn--sm btn--full" onClick={showMoreNodes}>
+                  <Icon name="plus" className="icon-xs" /> Show {nextNodeCount - visibleNodeCount} more
+
+               </button>
+             ) : graphNodes.length > INITIAL_NODE_COUNT ? (
+               <button type="button" className="btn btn--ghost btn--sm btn--full" onClick={resetNodeCount}>Collapse to 5</button>
+             ) : <span className="network-discovery__complete"><Icon name="check" className="icon-xs" /> All nodes visible</span>}
+           </div>
+
+           {caseEntities.length > 0 && (
+
             <div className="network-controls__entities">
               <h4>Case Entities</h4>
               <EntityChipList
                 entities={caseEntities}
                 maxVisible={5}
                 title="Case Entities"
-                onSelect={(entity) => setSelectedNetworkNode(entity.id)}
+                 onSelect={(entity) => selectEntity(entity.id)}
+
               />
             </div>
           )}
 
           <div className="network-controls__divider" />
 
-          <button type="button" className="btn btn--primary btn--sm btn--full" onClick={() => setAddEntityModalOpen(true)}>
-            <Icon name="plus" className="icon-xs" /> Add Entity
-          </button>
-          <button type="button" className="btn btn--accent btn--sm btn--full" onClick={() => setAddRelationshipModalOpen(true)}
-            disabled={caseEntities.length < 2} title={caseEntities.length < 2 ? 'Need at least 2 entities' : ''}>
-            <Icon name="link" className="icon-xs" /> Add Relationship
-          </button>
+           {canEdit && <>
+             <button type="button" className="btn btn--primary btn--sm btn--full" onClick={() => setAddEntityModalOpen(true)}>
+               <Icon name="plus" className="icon-xs" /> Add Entity
+             </button>
+             <button type="button" className="btn btn--accent btn--sm btn--full" onClick={() => setAddRelationshipModalOpen(true)}
+               disabled={caseEntities.length < 2} title={caseEntities.length < 2 ? 'Need at least 2 entities' : ''}>
+               <Icon name="link" className="icon-xs" /> Add Relationship
+             </button>
+           </>}
+
 
           <div className="network-controls__divider" />
 
-          <button type="button" className="btn btn--primary btn--sm btn--full"
-            onClick={handleRunAnalysis}
-            disabled={analyzing || caseEntities.length < 2}>
-            {analyzing ? (
-              <><Icon name="spinner" className="icon-xs" /> Analyzing...</>
-            ) : (
-              <><Icon name="zap" className="icon-xs" /> AI Analyze Case</>
-            )}
-          </button>
-          {caseEntities.length < 2 && (
-            <span className="network-controls__hint">Need at least 2 entities</span>
-          )}
+           {canEdit && <button type="button" className="btn btn--primary btn--sm btn--full"
+             onClick={handleRunAnalysis}
+             disabled={analyzing || caseEntities.length < 2}>
+             {analyzing ? (
+               <><Icon name="spinner" className="icon-xs" /> Analyzing...</>
+             ) : (
+               <><Icon name="zap" className="icon-xs" /> AI Analyze Case</>
+             )}
+           </button>}
+           {canEdit && caseEntities.length < 2 && (
+             <span className="network-controls__hint">Need at least 2 entities</span>
+           )}
+
 
           <div className="network-controls__divider" />
 
@@ -462,7 +550,8 @@ export default function NetworkAnalysis() {
           onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
           <div className="network-canvas__toolbar">
-            <span className="network-canvas__info">{graphNodes.length} nodes · {graphEdges.length} edges</span>
+             <span className="network-canvas__info">{Math.min(visibleNodeCount, graphNodes.length)} of {graphNodes.length} nodes · {graphEdges.length} edges</span>
+
             <div className="network-canvas__zoom">
               <button type="button" className="topbar__icon-btn" onClick={() => setZoom(z => Math.min(z + 0.15, 3))}>
                 <Icon name="zoomIn" className="icon-sm" />
@@ -489,11 +578,12 @@ export default function NetworkAnalysis() {
               <Icon name="network" className="icon-lg" />
               <h3>No entities added yet</h3>
               <p>Add entities to begin building this case.</p>
-              <div className="network-empty-state__actions">
-                <button type="button" className="btn btn--primary" onClick={() => setAddEntityModalOpen(true)}>
-                  <Icon name="plus" className="icon-xs" /> Add Entity
-                </button>
-              </div>
+               {canEdit && <div className="network-empty-state__actions">
+                 <button type="button" className="btn btn--primary" onClick={() => setAddEntityModalOpen(true)}>
+                   <Icon name="plus" className="icon-xs" /> Add Entity
+                 </button>
+               </div>}
+
             </div>
           ) : analyzing ? (
             <div className="network-empty-state">
@@ -505,8 +595,11 @@ export default function NetworkAnalysis() {
             <NetworkGraph
               interactive selectedNodeId={selectedNetworkNode} onNodeClick={handleNodeClick}
               zoom={zoom} panX={panX} panY={panY} filters={combinedFilters}
-              focusEntityId={networkFocusEntity} rotating={rotating}
-              nodes={graphNodes} edges={graphEdges}
+               focusEntityId={networkFocusEntity} rotating={rotating}
+               nodes={graphNodes} edges={graphEdges}
+               nodeLimit={visibleNodeCount}
+               onEdgeClick={handleEdgeClick}
+
             />
           )}
         </div>
@@ -522,8 +615,9 @@ export default function NetworkAnalysis() {
             const rels = caseRelationships.filter(r => r.fromId === selectedNetworkNode || r.toId === selectedNetworkNode)
             showToast(`Found ${rels.length} direct connections`, 'info')
           }}}
-          onAddToInvestigation={() => { if (selectedEntity) showToast(`${selectedEntity.name} added to active investigation`, 'success') }}
-          onEntitySelect={(entity) => setSelectedNetworkNode(entity.id)}
+          onAddToInvestigation={canEdit ? () => { if (selectedEntity) showToast(`${selectedEntity.name} added to active investigation`, 'success') } : undefined}
+           onEntitySelect={(entity) => selectEntity(entity.id)}
+
         />
       </div>
 
@@ -537,9 +631,10 @@ export default function NetworkAnalysis() {
               )}
             </h3>
             <div className="network-suggestions__controls">
-              <button type="button" className="btn btn--primary btn--sm" onClick={handleRunAnalysis} disabled={caseEntities.length < 2}>
-                <Icon name="zap" className="icon-xs" /> Re-run Analysis
-              </button>
+               {canEdit && <button type="button" className="btn btn--primary btn--sm" onClick={handleRunAnalysis} disabled={caseEntities.length < 2}>
+                 <Icon name="zap" className="icon-xs" /> Re-run Analysis
+               </button>}
+
             </div>
           </div>
           <div className="network-suggestions__body">
@@ -560,6 +655,7 @@ export default function NetworkAnalysis() {
                     suggestion={s}
                     onAccept={acceptSuggestion}
                     onReject={rejectSuggestion}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>
@@ -568,9 +664,9 @@ export default function NetworkAnalysis() {
         </div>
       )}
 
-      <AddEntityModal open={addEntityModalOpen} onClose={() => setAddEntityModalOpen(false)} onAdd={addEntity} caseId={selectedCaseLocal?.id} />
-      <AddRelationshipModal open={addRelationshipModalOpen} onClose={() => setAddRelationshipModalOpen(false)} onAdd={addRelationship}
-        caseId={selectedCaseLocal?.id} entities={entities} />
+      {canEdit && <AddEntityModal open={addEntityModalOpen} onClose={() => setAddEntityModalOpen(false)} onAdd={addEntity} caseId={selectedCaseLocal?.id} />}
+      {canEdit && <AddRelationshipModal open={addRelationshipModalOpen} onClose={() => setAddRelationshipModalOpen(false)} onAdd={addRelationship}
+        caseId={selectedCaseLocal?.id} entities={entities} />}
     </div>
   )
 }

@@ -1,78 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { CASES, SUSPECTS } from '../data/mockData'
 import NexusCrimeLogo from '../components/NexusCrimeLogo'
-
-function HeroNetworkCanvas() {
-  const canvasRef = useRef(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    let animId
-    let w, h
-    const nodes = []
-
-    const resize = () => {
-      w = canvas.width = canvas.offsetWidth * 2
-      h = canvas.height = canvas.offsetHeight * 2
-      ctx.scale(1, 1)
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    for (let i = 0; i < 40; i++) {
-      nodes.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        r: Math.random() * 2.5 + 1.5,
-      })
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h)
-      nodes.forEach((n) => {
-        n.x += n.vx
-        n.y += n.vy
-        if (n.x < 0 || n.x > w) n.vx *= -1
-        if (n.y < 0 || n.y > h) n.vy *= -1
-      })
-
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x
-          const dy = nodes[i].y - nodes[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 220) {
-            ctx.beginPath()
-            ctx.moveTo(nodes[i].x, nodes[i].y)
-            ctx.lineTo(nodes[j].x, nodes[j].y)
-            ctx.strokeStyle = `rgba(0,212,255,${0.12 * (1 - dist / 220)})`
-            ctx.lineWidth = 1
-            ctx.stroke()
-          }
-        }
-      }
-
-      nodes.forEach((n) => {
-        ctx.beginPath()
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(0,212,255,0.45)'
-        ctx.fill()
-      })
-
-      animId = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-  return <canvas ref={canvasRef} className="landing-hero__canvas" aria-hidden="true" />
-}
+import AuroraBackground from '../components/background/AuroraBackground'
 
 const CAPABILITIES = [
   { icon: 'network', title: 'Network Intelligence', desc: 'Visualize relationships between persons, organizations, vehicles, locations and other entities.' },
@@ -130,6 +60,7 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
+      <AuroraBackground />
       <header className={`landing-header ${scrolled ? 'landing-header--scrolled' : ''}`}>
         <div className="landing-header__inner">
           <button className="landing-brand" onClick={() => scrollTo('#hero')} type="button">
@@ -160,7 +91,6 @@ export default function LandingPage() {
       </header>
 
       <section id="hero" className="landing-hero">
-        <HeroNetworkCanvas />
         <div className="landing-hero__content">
           <div className="landing-hero__badge">Criminal Network Intelligence Platform</div>
           <h1 className="landing-hero__title">

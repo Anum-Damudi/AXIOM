@@ -55,6 +55,17 @@ def migrate_schema(engine):
             add_columns("people", [
                 ("aliases", "TEXT"),
                 ("photo_path", "TEXT"),
+                ("gender", "VARCHAR(50)"),
+                ("height", "FLOAT"),
+                ("weight", "FLOAT"),
+                ("occupation", "VARCHAR(255)"),
+                ("nationality", "VARCHAR(255)"),
+                ("address", "TEXT"),
+                ("phone", "VARCHAR(50)"),
+                ("email", "VARCHAR(255)"),
+                ("notes", "TEXT"),
+                ("risk", "VARCHAR(50) DEFAULT 'MEDIUM'"),
+                ("status", "VARCHAR(50) DEFAULT 'ACTIVE'"),
             ])
 
             # Evidence table columns

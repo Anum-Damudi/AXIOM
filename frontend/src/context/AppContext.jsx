@@ -42,6 +42,62 @@ const ROLE_META = {
   INVESTIGATOR: { roleKey: 'investigator', roleLabel: 'Investigator' },
   OFFICER: { roleKey: 'officer', roleLabel: 'Officer' },
 }
+const PERSON_FIELDS = [
+  'name', 'age', 'gender', 'height', 'weight', 'occupation', 'nationality',
+  'address', 'phone', 'email', 'notes', 'aliases', 'risk', 'status', 'role',
+]
+const numericPersonFields = new Set(['age', 'height', 'weight'])
+function personPayload(data = {}) {
+  const payload = {}
+  PERSON_FIELDS.forEach((field) => {
+    if (data[field] === undefined) return
+    const value = data[field] === '' ? null : data[field]
+    payload[field] = numericPersonFields.has(field) && value !== null ? Number(value) : value
+  })
+  if (payload.role) payload.role = String(payload.role).toLowerCase()
+  if (payload.risk) payload.risk = String(payload.risk).toUpperCase()
+  if (payload.status) payload.status = String(payload.status).toUpperCase()
+  return payload
+}
+function errorText(value) {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map((item) => item?.msg || item?.message || String(item)).join('; ')
+  if (value && typeof value === 'object') return value.message || value.detail || JSON.stringify(value)
+  return String(value || 'Request failed')
+}
+
+function personEntity(person, caseId, fallback = {}) {
+  const role = String(person.role || fallback.role || 'suspect').toLowerCase()
+  const photoPath = person.photo_path || fallback.photoPath || null
+  return {
+    ...fallback,
+    id: person.id || fallback.id,
+    backendId: person.id || fallback.backendId,
+    caseId: caseId || fallback.caseId,
+    type: 'Person',
+    name: person.name || fallback.name || 'Unnamed person',
+    role: role === 'suspect' ? 'Suspect' : role.charAt(0).toUpperCase() + role.slice(1),
+    backendRole: role,
+    age: person.age ?? fallback.age ?? null,
+    gender: person.gender ?? fallback.gender ?? '',
+    height: person.height ?? fallback.height ?? null,
+    weight: person.weight ?? fallback.weight ?? null,
+    occupation: person.occupation ?? fallback.occupation ?? '',
+    nationality: person.nationality ?? fallback.nationality ?? '',
+    address: person.address ?? fallback.address ?? '',
+    phone: person.phone ?? fallback.phone ?? '',
+    email: person.email ?? fallback.email ?? '',
+    notes: person.notes ?? fallback.notes ?? fallback.description ?? '',
+    aliases: person.aliases ?? fallback.aliases ?? '',
+    photoPath,
+    photo: photoPath,
+    risk: String(person.risk || fallback.risk || 'MEDIUM').toUpperCase(),
+    status: String(person.status || fallback.status || 'ACTIVE').toUpperCase(),
+    description: person.notes ?? fallback.description ?? '',
+    data: { ...(fallback.data || {}), ...person },
+    createdAt: person.created_at || fallback.createdAt || new Date().toISOString(),
+  }
+}
 function enrichUser(user) {
   const meta = ROLE_META[String(user.role || '').toUpperCase()] || ROLE_META.INVESTIGATOR
   return {
@@ -87,6 +143,62 @@ function buildInitialData() {
     timeline: demo.timeline,
     locations: demo.locations,
   }
+}
+function backendStatus(value) {
+  const status = String(value || '').toLowerCase()
+  if (status === 'under investigation') return 'Under Investigation'
+  if (status === 'closed') return 'Closed'
+  if (status === 'open') return 'Open'
+  return value || 'Open'
+}
+function backendPriority(value) {
+  return String(value || 'medium').toUpperCase()
+}
+function backendCaseToLocal(item) {
+  const priority = backendPriority(item.priority)
+  const date = item.date || ''
+  return {
+    id: item.id,
+    backendCaseId: item.id,
+    title: item.title || item.id,
+    type: item.case_type || 'Other',
+    priority,
+    status: backendStatus(item.status),
+    leadInvestigator: item.investigating_officer || 'Unassigned',
+    entities: 0,
+    lastUpdated: String(item.updated_at || item.created_at || date).slice(0, 10),
+    risk: priority,
+    description: '',
+    location: '',
+    date,
+    persons: [],
+    evidence: [],
+    timeline: [],
+  }
+}
+function mergeBackendCases(localCases, backendItems) {
+  const consumed = new Set()
+  const merged = backendItems.map((item) => {
+    const mapped = backendCaseToLocal(item)
+    const index = localCases.findIndex((local) => {
+      if (consumed.has(local.id)) return false
+      return local.id === mapped.backendCaseId || local.backendCaseId === mapped.backendCaseId || local.title === mapped.title
+    })
+    if (index === -1) return mapped
+    const existing = localCases[index]
+    consumed.add(existing.id)
+    return {
+      ...existing,
+      ...mapped,
+      id: existing.id,
+      description: existing.description || mapped.description,
+      location: existing.location || mapped.location,
+      persons: existing.persons?.length ? existing.persons : mapped.persons,
+      evidence: existing.evidence?.length ? existing.evidence : mapped.evidence,
+      timeline: existing.timeline?.length ? existing.timeline : mapped.timeline,
+    }
+  })
+  return [...merged, ...localCases.filter((item) => !consumed.has(item.id))]
 }
 export function AppProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -135,6 +247,7 @@ export function AppProvider({ children }) {
   const [linkEvidenceId, setLinkEvidenceId] = useState(null)
   const [addEntityModalOpen, setAddEntityModalOpen] = useState(false)
   const [addRelationshipModalOpen, setAddRelationshipModalOpen] = useState(false)
+  const [suspectModalOpen, setSuspectModalOpen] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState('')
   const navItems = useMemo(() => getNavByRole(user?.roleKey), [user?.roleKey])
@@ -199,8 +312,10 @@ export function AppProvider({ children }) {
     setActiveInvestigation(null)
     setActiveCaseId(null)
     setNotificationsOpen(false)
-    setSearchOpen(false)
-  }, [])
+     setSearchOpen(false)
+     setSuspectModalOpen(false)
+   }, [])
+
   const navigateTo = useCallback((targetPage) => {
     setPage(targetPage)
   }, [])
@@ -232,7 +347,7 @@ export function AppProvider({ children }) {
       })
       const data = await response.json().catch(() => null)
       if (!response.ok) {
-        const errMsg = data?.detail || data?.message || data?.error || `Request failed with status ${response.status}`
+        const errMsg = errorText(data?.detail || data?.message || data?.error || `Request failed with status ${response.status}`)
         console.error(`Backend request failed: ${method} ${path}`, { status: response.status, error: errMsg, data })
         if (response.status === 401) {
           saveSession(null)
@@ -246,12 +361,193 @@ export function AppProvider({ children }) {
       return { success: false, error: 'Network connection failed. Please ensure the backend is running.', data: null }
     }
   }, [])
+  useEffect(() => {
+    if (!user) return undefined
+    let cancelled = false
+    const hydrateBackendCases = async () => {
+      const response = await syncWithBackend('/cases?limit=100')
+      if (cancelled || !response?.success || !Array.isArray(response.data)) return
+      setCases((prev) => mergeBackendCases(prev, response.data))
+    }
+    hydrateBackendCases()
+    return () => { cancelled = true }
+  }, [syncWithBackend, user?.id])
+  const getBackendCaseId = useCallback(
+    async (caseId) => {
+      if (!caseId) return null
+      if (!loadSession()?.token) return null
+      const localCase = cases.find((item) => item.id === caseId)
+      if (localCase?.backendCaseId) return localCase.backendCaseId
+      if (String(caseId).startsWith('C')) return caseId
+
+      const listResponse = await syncWithBackend(`/cases?limit=100&keyword=${encodeURIComponent(localCase?.title || caseId)}`)
+      const matchingCase = listResponse?.data?.find((item) => item.id === caseId || item.title === localCase?.title)
+      if (matchingCase?.id) {
+        if (localCase) {
+          setCases((prev) => prev.map((item) => item.id === caseId ? { ...item, backendCaseId: matchingCase.id } : item))
+        }
+        return matchingCase.id
+      }
+
+      if (!localCase) return null
+      const createResponse = await syncWithBackend('/cases', 'POST', {
+        title: localCase.title,
+        date: localCase.date || new Date().toISOString().slice(0, 10),
+        status: String(localCase.status || 'open').toLowerCase(),
+        priority: String(localCase.priority || localCase.risk || 'medium').toLowerCase(),
+        case_type: localCase.type || 'Criminal Investigation',
+        investigating_officer: localCase.leadInvestigator || user?.name || null,
+      })
+      if (!createResponse?.data?.id) return null
+      setCases((prev) => prev.map((item) => item.id === caseId ? { ...item, backendCaseId: createResponse.data.id } : item))
+      return createResponse.data.id
+    },
+    [cases, setCases, syncWithBackend, user?.name],
+  )
   const uploadUrl = useCallback((path) => {
     if (!path) return null
     return path.startsWith('/')
       ? `${API_BASE.replace(/\/api\/v1$/, '')}${path}`
       : `${API_BASE.replace(/\/api\/v1$/, '')}/uploads/${path}`
   }, [])
+  const createSuspect = useCallback(
+    async (data) => {
+      const response = await syncWithBackend('/people', 'POST', personPayload({ ...data, role: 'suspect' }))
+      const person = response?.data
+      if (!person && response?.error && !errorText(response.error).toLowerCase().includes('network')) {
+        showToast(response.error, 'error')
+        return null
+      }
+
+      const backendCaseId = person ? await getBackendCaseId(data.caseId) : null
+      let linked = false
+      if (person && backendCaseId) {
+        const linkResponse = await syncWithBackend(`/cases/${encodeURIComponent(backendCaseId)}/entities`, 'POST', {
+          type: 'person',
+          entity_id: person.id,
+          name: person.name,
+          role: 'suspect',
+        })
+        linked = Boolean(linkResponse?.success)
+      }
+
+      const entity = person
+        ? personEntity(person, data.caseId, {
+            ...data,
+            id: person.id,
+            backendId: person.id,
+            risk: data.risk || person.risk,
+            description: data.description || data.notes,
+          })
+        : {
+            ...data,
+            id: data.id || `ENT-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            backendId: null,
+            type: 'Person',
+            role: 'Suspect',
+            risk: String(data.risk || 'MEDIUM').toUpperCase(),
+            status: String(data.status || 'ACTIVE').toUpperCase(),
+            description: data.notes || data.description || '',
+            createdAt: new Date().toISOString(),
+          }
+
+      setEntities((prev) => {
+        const existingIndex = prev.findIndex((item) => item.caseId === data.caseId && item.id === entity.id)
+        if (existingIndex === -1) return [entity, ...prev]
+        return prev.map((item, index) => index === existingIndex ? { ...item, ...entity } : item)
+      })
+      setTimeline((prev) => [{
+        id: `tl-${Date.now()}`,
+        caseId: data.caseId,
+        date: new Date().toISOString().slice(0, 10),
+        event: `Suspect added: ${entity.name}`,
+        type: 'ENTITY_ADDED',
+        entityId: entity.id,
+        createdAt: new Date().toISOString(),
+      }, ...prev])
+      setSelectedSuspectId(entity.id)
+      if (!person) showToast('Suspect saved in the local workspace', 'info')
+      else if (!linked) showToast('Suspect saved; case link is awaiting backend confirmation', 'info')
+      else showToast(`Suspect "${entity.name}" saved`)
+      return { ...entity, persistence: person ? (linked ? 'backend' : 'person') : 'local' }
+    },
+    [getBackendCaseId, showToast, syncWithBackend],
+  )
+  const updateSuspect = useCallback(
+    async (suspectId, data) => {
+      const current = entities.find((entity) => entity.id === suspectId)
+      if (!current) return null
+      const response = current.backendId
+        ? await syncWithBackend(`/people/${encodeURIComponent(current.backendId)}`, 'PATCH', personPayload({ ...current, ...data, role: 'suspect' }))
+        : { success: true, data: null }
+      const person = response?.data
+      if (!person && response?.error && !errorText(response.error).toLowerCase().includes('network')) {
+        showToast(response.error, 'error')
+        return null
+      }
+      const updated = person
+        ? personEntity(person, current.caseId, { ...current, ...data })
+        : { ...current, ...data, role: 'Suspect', risk: String(data.risk || current.risk || 'MEDIUM').toUpperCase() }
+      setEntities((prev) => prev.map((entity) => entity.id === suspectId ? { ...entity, ...updated } : entity))
+      setSelectedSuspectId(suspectId)
+      showToast(`Suspect "${updated.name}" updated`)
+      return updated
+    },
+    [entities, showToast, syncWithBackend],
+  )
+  const deleteSuspect = useCallback(
+    async (suspectId) => {
+      const current = entities.find((entity) => entity.id === suspectId)
+      if (!current) return false
+      if (current.backendId) {
+        const response = await syncWithBackend(`/people/${encodeURIComponent(current.backendId)}`, 'DELETE')
+        if (!response?.success && response?.error && !errorText(response.error).toLowerCase().includes('not found')) {
+          showToast(response.error, 'error')
+          return false
+        }
+      }
+      setEntities((prev) => prev.filter((entity) => !(entity.id === suspectId && entity.caseId === current.caseId)))
+      setRelationships((prev) => prev.filter((relationship) => relationship.fromId !== suspectId && relationship.toId !== suspectId))
+      setSelectedSuspectId(null)
+      showToast(`Suspect "${current.name}" deleted`)
+      return true
+    },
+     [entities, showToast, syncWithBackend],
+
+  )
+  const uploadSuspectPhoto = useCallback(
+    async (suspectId, file, entityOverride = null) => {
+      if (!file) return null
+      if (!file.type.startsWith('image/')) {
+        showToast('Select an image file for the suspect photo', 'error')
+        return null
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Suspect photos must be 5 MB or smaller', 'error')
+        return null
+      }
+      const current = entityOverride || entities.find((entity) => entity.id === suspectId)
+      if (!current) return null
+      if (!current.backendId) {
+        const preview = URL.createObjectURL(file)
+        setEntities((prev) => prev.map((entity) => entity.id === suspectId ? { ...entity, photo: preview, photoPath: preview } : entity))
+        showToast('Photo attached to the local workspace', 'info')
+        return preview
+      }
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await syncWithBackend(`/people/${encodeURIComponent(current.backendId)}/photo`, 'POST', formData, true)
+      if (!response?.success) {
+        showToast(response?.error || 'Photo upload failed', 'error')
+        return null
+      }
+      const photoPath = response.data?.photo_path || null
+      setEntities((prev) => prev.map((entity) => entity.id === suspectId ? { ...entity, photoPath, photo: photoPath } : entity))
+      showToast('Suspect photo updated')
+      return response.data
+    },
+    [entities, showToast, syncWithBackend],
+  )
   const navigate = useCallback((view, options = {}) => {
     setActiveView(view)
     setSidebarOpen(false)
@@ -270,6 +566,11 @@ export function AppProvider({ children }) {
     if (options.suspectId) {
       setSelectedSuspectId(options.suspectId)
       if (view === 'network') setNetworkFocusEntity(options.suspectId)
+    }
+    if (options.openAddSuspect) {
+      setSuspectModalOpen(true)
+    } else {
+      setSuspectModalOpen(false)
     }
     if (options.evidenceId) {
       setSelectedEvidenceId(options.evidenceId)
@@ -367,6 +668,9 @@ export function AppProvider({ children }) {
   )
   const addEntity = useCallback(
     async (data) => {
+      if (String(data.type || '').toLowerCase() === 'person' && String(data.role || '').toLowerCase() === 'suspect') {
+        return createSuspect(data)
+      }
       const entity = {
         id: data.id || `ENT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         caseId: data.caseId,
@@ -405,7 +709,7 @@ export function AppProvider({ children }) {
       }
       return entity
     },
-    [cases, showToast, syncWithBackend],
+    [cases, createSuspect, showToast, syncWithBackend],
   )
   const addRelationship = useCallback(
     (data) => {
@@ -770,7 +1074,9 @@ export function AppProvider({ children }) {
     async (caseId) => {
       if (!caseId) return []
       try {
-        const response = await syncWithBackend(`/cases/${caseId}/evidence`)
+        const backendCaseId = await getBackendCaseId(caseId)
+        if (!backendCaseId) return []
+        const response = await syncWithBackend(`/cases/${encodeURIComponent(backendCaseId)}/evidence`)
         if (response?.success && response?.data && Array.isArray(response.data)) {
           const backendItems = response.data.map((item) => ({
             id: item.id,
@@ -811,34 +1117,36 @@ export function AppProvider({ children }) {
     async (caseId) => {
       if (!caseId) return []
       try {
-        const response = await syncWithBackend(`/cases/${caseId}/entities`)
+        const backendCaseId = await getBackendCaseId(caseId)
+        if (!backendCaseId) return []
+        const response = await syncWithBackend(`/cases/${encodeURIComponent(backendCaseId)}/entities`)
         if (response?.success && response?.data && Array.isArray(response.data)) {
-          const backendEntities = response.data.map((item) => ({
-            id: item.id,
-            caseId: caseId,
-            name: item.name,
-            type: item.type,
-            role: item.role,
-            risk: 'MEDIUM',
-          }))
+          const backendEntities = response.data.map((item) => {
+            if (item.type === 'Person') {
+              return personEntity(item, caseId, { id: item.id, backendId: item.id })
+            }
+            return {
+              id: item.id,
+              caseId,
+              name: item.name,
+              type: item.type,
+              role: item.role,
+              risk: item.risk || 'MEDIUM',
+            }
+          })
           setEntities((prev) => {
-            const others = prev.filter((e) => e.caseId !== caseId)
-            return [...others, ...backendEntities]
+            const current = prev.filter((entity) => entity.caseId === caseId)
+            const backendIds = new Set(backendEntities.map((entity) => entity.id))
+            return [...backendEntities, ...current.filter((entity) => !backendIds.has(entity.id))]
           })
           return backendEntities
-        } else if (response?.error) {
-          console.error('Failed to fetch entities:', response.error)
-          if (!response.error.includes('not found') && !response.error.includes('Case')) {
-            showToast(`Failed to fetch entities: ${response.error}`, 'error')
-          }
         }
-      } catch (e) {
-        console.error('Error fetching entities:', e)
-        showToast('Network error while fetching entities', 'error')
+      } catch (error) {
+        console.error('Error fetching entities:', error)
       }
       return []
     },
-    [syncWithBackend, showToast],
+    [getBackendCaseId, syncWithBackend],
   )
   useEffect(() => {
     if (!selectedCaseId) return
@@ -900,6 +1208,7 @@ export function AppProvider({ children }) {
         setLinkEvidenceModalOpen(false)
         setAddEntityModalOpen(false)
         setAddRelationshipModalOpen(false)
+        setSuspectModalOpen(false)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
@@ -954,6 +1263,7 @@ export function AppProvider({ children }) {
       linkEvidenceId,
       addEntityModalOpen,
       addRelationshipModalOpen,
+      suspectModalOpen,
       analyzing,
       analysisStep,
       unreadCount,
@@ -977,15 +1287,22 @@ export function AppProvider({ children }) {
       setLinkEvidenceModalOpen,
       setLinkEvidenceId,
       setActiveInvestigation,
-      setAddEntityModalOpen,
-      setAddRelationshipModalOpen,
-      navigate,
+       setAddEntityModalOpen,
+       setAddRelationshipModalOpen,
+       setSuspectModalOpen,
+       navigate,
+
       openStartInvestigation,
       createInvestigation,
       addCase,
       updateCaseStatus,
-      addEntity,
-      addRelationship,
+       addEntity,
+       createSuspect,
+       updateSuspect,
+       deleteSuspect,
+       uploadSuspectPhoto,
+       addRelationship,
+
       addIntelligence,
       addLocation,
       updateLocation,
@@ -1060,6 +1377,7 @@ export function AppProvider({ children }) {
       linkEvidenceId,
       addEntityModalOpen,
       addRelationshipModalOpen,
+      suspectModalOpen,
       analyzing,
       analysisStep,
       unreadCount,
@@ -1069,8 +1387,13 @@ export function AppProvider({ children }) {
       createInvestigation,
       addCase,
       updateCaseStatus,
-      addEntity,
-      addRelationship,
+       addEntity,
+       createSuspect,
+       updateSuspect,
+       deleteSuspect,
+       uploadSuspectPhoto,
+       addRelationship,
+
       addIntelligence,
       addLocation,
       updateLocation,

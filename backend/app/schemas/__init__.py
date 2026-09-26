@@ -3,7 +3,7 @@ from app.schemas.auth import UserRegister, UserLogin, UserResponse, TokenRespons
 from app.schemas.case import CaseCreate, CaseUpdate, CaseResponse, RelatedCaseConnection
 from app.schemas.report import ReportCreate, ReportResponse, ExtractedNlpResult
 from app.schemas.entity import (
-    PersonCreate, VehicleCreate, LocationCreate, CaseEntityLinkCreate,
+    PersonCreate, PersonUpdate, VehicleCreate, LocationCreate, CaseEntityLinkCreate,
     PersonResponse, VehicleResponse, LocationResponse, PersonConnectionsResponse
 )
 from app.schemas.evidence import (
@@ -42,6 +42,7 @@ __all__ = [
     "ReportResponse",
     "ExtractedNlpResult",
     "PersonCreate",
+    "PersonUpdate",
     "VehicleCreate",
     "LocationCreate",
     "CaseEntityLinkCreate",

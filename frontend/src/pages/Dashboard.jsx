@@ -14,12 +14,13 @@ const TYPE_COLORS = {
 }
 
 function CaseOverview() {
-  const { navigate, cases, entities, relationships, evidence, aiSuggestions, timeline, locations,
+  const { navigate, user, cases, entities, relationships, evidence, aiSuggestions, timeline, locations,
     selectedCaseId, runAIAnalysis, analyzing, analysisStep } = useApp()
 
   const sel = useMemo(() => cases.find(c => c.id === selectedCaseId) || null, [cases, selectedCaseId])
+  const canEdit = user?.roleKey !== 'officer'
   const ents = useMemo(() => entities.filter(e => e.caseId === selectedCaseId), [entities, selectedCaseId])
-  const suspects = useMemo(() => ents.filter(e => e.type === 'Person' && e.role === 'Suspect'), [ents])
+  const suspects = useMemo(() => ents.filter(e => e.type === 'Person' && String(e.role).toLowerCase() === 'suspect'), [ents])
   const rels = useMemo(() => relationships.filter(r => r.caseId === selectedCaseId), [relationships, selectedCaseId])
   const confirmed = useMemo(() => rels.filter(r => ['CONFIRMED', 'AI_CONFIRMED', 'MANUAL'].includes(r.status)), [rels])
   const pending = useMemo(() => aiSuggestions.filter(s => s.caseId === selectedCaseId && s.status === 'PENDING'), [aiSuggestions, selectedCaseId])
@@ -81,9 +82,10 @@ function CaseOverview() {
           {suspectsList.length === 0 ? (
             <div className="empty-state">
               <p>No suspects identified in this case yet.</p>
-              <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate('network')}>
+              {canEdit && <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate('suspects', { openAddSuspect: true })}>
                 <Icon name="plus" className="icon-xs" /> Add Suspect
-              </button>
+              </button>}
+              {!canEdit && <span className="access-note">Read-only access</span>}
             </div>
           ) : (
             <div className="case-list">
@@ -139,15 +141,15 @@ function CaseOverview() {
             <button type="button" className="btn btn--primary" onClick={() => navigate('network')}>
               <Icon name="network" className="icon-xs" /> Open Network Analysis
             </button>
-            <button type="button" className="btn btn--accent" onClick={() => runAIAnalysis(selectedCaseId)} disabled={analyzing}>
+            {canEdit && <button type="button" className="btn btn--accent" onClick={() => runAIAnalysis(selectedCaseId)} disabled={analyzing}>
               {analyzing ? <><span className="spinner spinner--sm" /> Analyzing…</> : <><Icon name="ai" className="icon-xs" /> AI Analyze Case</>}
-            </button>
+            </button>}
             <button type="button" className="btn btn--ghost" onClick={() => navigate('reports')}>
               <Icon name="file" className="icon-xs" /> Generate Report
             </button>
-            <button type="button" className="btn btn--ghost" onClick={() => navigate('network')}>
+            {canEdit && <button type="button" className="btn btn--ghost" onClick={() => navigate('network')}>
               <Icon name="plus" className="icon-xs" /> Add Entity
-            </button>
+            </button>}
           </div>
         </section>
 
@@ -214,6 +216,7 @@ function CaseOverview() {
 
 function GeneralOverview() {
   const { navigate, user, cases, entities, relationships, evidence, setNewCaseModalOpen } = useApp()
+  const canEdit = user?.roleKey !== 'officer'
   const activeCases = useMemo(() => cases.filter(c => c.status === 'Active' || c.status === 'Under Investigation'), [cases])
   const highRisk = useMemo(() => entities.filter(e => e.risk === 'HIGH' || e.risk === 'CRITICAL'), [entities])
 
@@ -228,9 +231,9 @@ function GeneralOverview() {
             surface hidden criminal networks. You have {activeCases.length} active investigations requiring attention.
           </p>
           <div className="hero__actions">
-            <button type="button" className="btn btn--primary" onClick={() => setNewCaseModalOpen(true)}>
+            {canEdit && <button type="button" className="btn btn--primary" onClick={() => setNewCaseModalOpen(true)}>
               <Icon name="plus" className="icon-xs" /> Create Case
-            </button>
+            </button>}
             <button type="button" className="btn btn--ghost" onClick={() => navigate('network')}>
               Network Analysis <Icon name="chevron" className="icon-xs" />
             </button>

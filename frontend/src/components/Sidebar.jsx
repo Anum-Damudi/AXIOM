@@ -42,11 +42,12 @@ export default function Sidebar() {
 
         <nav className="sidebar__nav">
           <span className="sidebar__nav-label">{sidebarCollapsed ? '' : 'Main Navigation'}</span>
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <button
               key={item.id}
               type="button"
-              className={`sidebar__link ${activeView === item.id ? 'sidebar__link--active' : ''}`}
+              style={{ '--ax-i': index }}
+              className={`sidebar__link ax-reveal--left ${activeView === item.id ? 'sidebar__link--active' : ''}`}
               onClick={() => navigate(item.id)}
               title={sidebarCollapsed ? item.label : undefined}
             >
