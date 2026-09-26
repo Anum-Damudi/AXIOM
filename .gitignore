@@ -1,2 +1,10 @@
 __pycache__/
 *.pyc
+.env
+.env.*
+__pycache__/
+*.pyc
+venv/
+.venv/
+node_modules/
+dist/
