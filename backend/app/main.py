@@ -24,7 +24,11 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     migrate_schema(engine)
     logger.info("Database tables initialized and schema verified.")
-    neo4j_client.connect()
+
+    # Do not block Render startup waiting for Neo4j.
+    logger.info("Skipping Neo4j connection during startup.")
+
+# Create genesis block and default users if none exists
     
     # Create genesis block and default users if none exists
     db = SessionLocal()
